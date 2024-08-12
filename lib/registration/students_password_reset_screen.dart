@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class UpdatePasswordScreen extends StatefulWidget {
-  final String userRole; // Add this line to accept userRole
+  final String userRole;
 
   UpdatePasswordScreen({required this.userRole});
 
@@ -36,15 +36,13 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
       _isLoading = true;
     });
 
-    var myIp = '10.5.50.82'; // Replace with your server IP
-
     final response = await http.post(
-      Uri.parse('http://$myIp/tutoring_app/reset_password.php'),
+      Uri.parse('http://10.5.50.82/tutoring_app/reset_password.php'),
       body: {
         'email': email,
         'old_password': oldPassword,
         'new_password': newPassword,
-        'role': widget.userRole, // Pass the userRole to the server
+        'role': widget.userRole.toLowerCase(), // Convert to lowercase
       },
     );
 
@@ -74,97 +72,112 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Update Password'),
-      ),
-      body: Center(
-        child: Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Card(
-            elevation: 8,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16.0),
-            ),
-            child: Padding(
-              padding: EdgeInsets.all(16.0),
-              child: ListView(
-                shrinkWrap: true,
-                children: [
-                  Center(
-                    child: Image.asset(
-                      'images/apptutor.png', // Update the path as needed
-                      height: 300, // Adjust the height as needed
-                      fit: BoxFit.contain,
-                    ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              const Color.fromARGB(255, 28, 195, 198),
+              const Color.fromARGB(255, 249, 249, 249)
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Center(
+          child: Padding(
+            padding: EdgeInsets.all(24.0),
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                // Logo
+                Center(
+                  child: Image.asset(
+                    'images/apptutor.png', // Update the path as needed
+                    height: 120, // Adjust the height as needed
+                    fit: BoxFit.contain,
                   ),
-                  SizedBox(height: 20),
-                  Text(
-                    'Enter your email and new password',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).primaryColor,
-                    ),
-                    textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 20),
+                // Heading Text
+                Text(
+                  'Enter your email and new password',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
                   ),
-                  SizedBox(height: 20),
-                  TextFormField(
-                    controller: _emailController,
-                    decoration: InputDecoration(
-                      labelText: 'Email',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.email),
-                    ),
-                    keyboardType: TextInputType.emailAddress,
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 24),
+                // Email Field
+                TextField(
+                  controller: _emailController,
+                  decoration: InputDecoration(
+                    labelText: 'Email',
+                    prefixIcon: Icon(Icons.email),
+                    border: UnderlineInputBorder(),
                   ),
-                  SizedBox(height: 20),
-                  TextFormField(
-                    controller: _oldPasswordController,
-                    decoration: InputDecoration(
-                      labelText: 'Old Password',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.lock),
-                    ),
-                    obscureText: true,
+                  keyboardType: TextInputType.emailAddress,
+                ),
+                SizedBox(height: 16),
+                // Old Password Field
+                TextField(
+                  controller: _oldPasswordController,
+                  decoration: InputDecoration(
+                    labelText: 'Old Password',
+                    prefixIcon: Icon(Icons.lock),
+                    border: UnderlineInputBorder(),
                   ),
-                  SizedBox(height: 20),
-                  TextFormField(
-                    controller: _newPasswordController,
-                    decoration: InputDecoration(
-                      labelText: 'New Password',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.lock),
-                    ),
-                    obscureText: true,
+                  obscureText: true,
+                ),
+                SizedBox(height: 16),
+                // New Password Field
+                TextField(
+                  controller: _newPasswordController,
+                  decoration: InputDecoration(
+                    labelText: 'New Password',
+                    prefixIcon: Icon(Icons.lock),
+                    border: UnderlineInputBorder(),
                   ),
-                  SizedBox(height: 10),
-                  TextFormField(
-                    controller: _confirmPasswordController,
-                    decoration: InputDecoration(
-                      labelText: 'Confirm Password',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.lock),
-                    ),
-                    obscureText: true,
+                  obscureText: true,
+                ),
+                SizedBox(height: 16),
+                // Confirm Password Field
+                TextField(
+                  controller: _confirmPasswordController,
+                  decoration: InputDecoration(
+                    labelText: 'Confirm Password',
+                    prefixIcon: Icon(Icons.lock),
+                    border: UnderlineInputBorder(),
                   ),
-                  SizedBox(height: 20),
-                  Center(
-                    child: _isLoading
-                        ? CircularProgressIndicator()
-                        : ElevatedButton(
-                            onPressed: () => updatePassword(context),
-                            child: Text('Update Password'),
-                            style: ElevatedButton.styleFrom(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 40, vertical: 15),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
-                              ),
+                  obscureText: true,
+                ),
+                SizedBox(height: 24),
+                // Update Password Button
+                Center(
+                  child: _isLoading
+                      ? CircularProgressIndicator()
+                      : ElevatedButton(
+                          onPressed: () => updatePassword(context),
+                          style: ElevatedButton.styleFrom(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 40, vertical: 15),
+                            backgroundColor:
+                                const Color.fromARGB(255, 28, 195, 198),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
                             ),
                           ),
-                  ),
-                ],
-              ),
+                          child: Text(
+                            'Update Password',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                ),
+              ],
             ),
           ),
         ),

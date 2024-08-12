@@ -14,6 +14,7 @@ class TutorProfileScreen extends StatefulWidget {
   final bool canEdit;
   final String currentUser;
   final String currentUserImage;
+  final String idUser;
 
   const TutorProfileScreen({
     Key? key,
@@ -25,8 +26,9 @@ class TutorProfileScreen extends StatefulWidget {
     this.canEdit = false,
     required this.currentUser,
     required this.currentUserImage,
+    required String username,
     required String profileImageUrl,
-    required username,
+    required this.idUser,
   }) : super(key: key);
 
   @override
@@ -36,6 +38,7 @@ class TutorProfileScreen extends StatefulWidget {
 class _TutorProfileScreenState extends State<TutorProfileScreen> {
   File? _profileImage;
   File? _resumeFile;
+  TextEditingController _educationLevelController = TextEditingController();
   TextEditingController _nameController = TextEditingController();
   TextEditingController _categoryController = TextEditingController();
   TextEditingController _subjectController = TextEditingController();
@@ -54,7 +57,15 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
   @override
   void initState() {
     super.initState();
-    print('widget.userId in initState: ${widget.userId}');
+    _fetchProfileData();
+    _fetchReviews();
+    _checkIfFavorite();
+  }
+
+  @override
+  void didUpdateWidget(covariant TutorProfileScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Refetch data when the widget is updated
     _fetchProfileData();
     _fetchReviews();
     _checkIfFavorite();
@@ -82,6 +93,8 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
             _topicController.text = profileData['topic'] ?? '';
             _emailController.text = profileData['email'] ?? '';
             _addressController.text = profileData['address'] ?? '';
+            _educationLevelController.text =
+                profileData['education_level'] ?? '';
             _profileImageUrl = profileData['profile_image'];
             _resumeImageUrl = profileData['resume_image'];
             isLoading = false;
@@ -130,10 +143,13 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
   }
 
   Future<void> _checkIfFavorite() async {
-    try {
-      print('student_id: ${widget.userId}');
-      print('tutor_id: ${widget.tutorId}');
+    if (widget.tutorId.isEmpty || widget.userId.isEmpty) {
+      _showSnackBar(
+          'Tutor ID or Student ID is missing, unable to check favorite status');
+      return;
+    }
 
+    try {
       final url =
           Uri.parse('http://10.5.50.82/tutoring_app/check_favorite.php');
       final response = await http.post(url, body: {
@@ -148,10 +164,11 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
             isFavorite = data['is_favorite'];
           });
         } else {
-          _showSnackBar('Failed to load favorite status');
+          _showSnackBar('Failed to load favorite status: ${data['message']}');
         }
       } else {
-        _showSnackBar('Failed to load favorite status');
+        _showSnackBar(
+            'Failed to load favorite status: Server responded with status code ${response.statusCode}');
       }
     } catch (e) {
       _showSnackBar('Error checking favorite status: $e');
@@ -159,24 +176,21 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
   }
 
   Future<void> _toggleFavorite() async {
+    if (widget.tutorId.isEmpty) {
+      _showSnackBar('Invalid tutor ID');
+      return;
+    }
+
     final action = isFavorite ? 'remove' : 'add';
 
     try {
       final url =
           Uri.parse('http://10.5.50.82/tutoring_app/favorite_tutors.php');
       final response = await http.post(url, body: {
-        'student_id': widget.userId.toString(), // Ensure this is a string
-        'tutor_id': widget.tutorId.toString(), // Ensure this is a string
+        'student_id': widget.userId.toString(),
+        'tutor_id': widget.tutorId.toString(),
         'action': action,
       });
-
-      print('widget.userId: ${widget.userId}');
-      print('widget.tutorId: ${widget.tutorId}');
-      print('student_id: ${widget.userId}');
-      print('tutor_id: ${widget.tutorId}');
-      print('action: $action');
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -198,9 +212,11 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
   }
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    });
   }
 
   Future<void> _pickImage(ImageSource source) async {
@@ -226,6 +242,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
         ),
       );
       request.fields['username'] = widget.userName;
+
       var response = await request.send();
       if (response.statusCode == 200) {
         var responseBody = await response.stream.bytesToString();
@@ -242,7 +259,8 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
               'Failed to upload profile image: ${jsonData['message']}');
         }
       } else {
-        _showSnackBar('Failed to upload profile image');
+        _showSnackBar(
+            'Failed to upload profile image: ${response.reasonPhrase}');
       }
     } catch (e) {
       _showSnackBar('Error uploading profile image: $e');
@@ -346,6 +364,9 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
           });
           widget.onProfileUpdated?.call();
           _showSnackBar('Profile updated successfully');
+
+          // รีเฟรชข้อมูลโปรไฟล์หลังจากอัปเดตสำเร็จ
+          _fetchProfileData();
         } else {
           _showSnackBar('Failed to update profile: ${jsonData['message']}');
         }
@@ -401,7 +422,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Tutor Profile'),
-        backgroundColor: Colors.blue[800],
+        backgroundColor: const Color.fromARGB(255, 28, 195, 198),
         actions: widget.canEdit
             ? [
                 IconButton(
@@ -423,99 +444,123 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
           ? Center(child: CircularProgressIndicator())
           : _nameController.text.isEmpty
               ? Center(child: Text('No profile data available'))
-              : SingleChildScrollView(
-                  padding: EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Center(
-                        child: GestureDetector(
-                          onTap: widget.canEdit && _isEditing
-                              ? () => _pickImage(ImageSource.gallery)
-                              : null,
-                          child: CircleAvatar(
-                            radius: 70,
-                            backgroundImage: _profileImage != null
-                                ? FileImage(_profileImage!)
-                                : (_profileImageUrl != null
-                                    ? NetworkImage(
-                                        'http://10.5.50.82/tutoring_app/uploads/$_profileImageUrl')
-                                    : AssetImage('images/default_profile.jpg')
-                                        as ImageProvider),
-                            child: Align(
-                              alignment: Alignment.bottomRight,
-                              child: Icon(
-                                Icons.camera_alt,
-                                color: widget.canEdit && _isEditing
-                                    ? Colors.blue[800]
-                                    : Colors.transparent,
-                                size: 30,
+              : Stack(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            const Color.fromARGB(255, 28, 195, 198),
+                            const Color.fromARGB(255, 249, 249, 249),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SingleChildScrollView(
+                      padding: EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Center(
+                            child: GestureDetector(
+                              onTap: widget.canEdit && _isEditing
+                                  ? () => _pickImage(ImageSource.gallery)
+                                  : null,
+                              child: CircleAvatar(
+                                radius: 70,
+                                backgroundImage: _profileImage != null
+                                    ? FileImage(_profileImage!)
+                                    : (_profileImageUrl != null
+                                        ? NetworkImage(
+                                            'http://10.5.50.82/tutoring_app/uploads/$_profileImageUrl')
+                                        : AssetImage(
+                                                'images/default_profile.jpg')
+                                            as ImageProvider),
+                                child: Align(
+                                  alignment: Alignment.bottomRight,
+                                  child: Icon(
+                                    Icons.camera_alt,
+                                    color: widget.canEdit && _isEditing
+                                        ? Colors.blue[800]
+                                        : Colors.transparent,
+                                    size: 30,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ),
-                      SizedBox(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          IconButton(
-                            icon: Icon(
-                              isFavorite
-                                  ? Icons.favorite
-                                  : Icons.favorite_border,
-                              color: isFavorite ? Colors.red : Colors.grey,
-                            ),
-                            onPressed: _toggleFavorite,
-                          ),
-                          SizedBox(width: 10),
-                          ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => TutoringScheduleScreen(
-                                    tutorName: widget.userName,
-                                    tutorImage: _profileImageUrl ??
-                                        'images/default_profile.jpg',
-                                    currentUser: widget.currentUser,
-                                    currentUserImage: widget.currentUserImage,
-                                  ),
+                          SizedBox(height: 20),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              IconButton(
+                                icon: Icon(
+                                  isFavorite
+                                      ? Icons.favorite
+                                      : Icons.favorite_border,
+                                  color: isFavorite ? Colors.red : Colors.grey,
                                 ),
-                              );
-                            },
-                            icon: Icon(Icons.schedule),
-                            label: Text('Tutoring'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue[800],
-                            ),
+                                onPressed: _toggleFavorite,
+                              ),
+                              SizedBox(width: 10),
+                              ElevatedButton.icon(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          TutoringScheduleScreen(
+                                        tutorName: widget.userName,
+                                        tutorImage: _profileImageUrl ??
+                                            'images/default_profile.jpg',
+                                        currentUser: widget.currentUser,
+                                        currentUserImage:
+                                            widget.currentUserImage,
+                                        idUser: widget.idUser,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                icon: Icon(Icons.schedule),
+                                label: Text('Tutoring'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blue[800],
+                                  foregroundColor: Colors.white,
+                                ),
+                              ),
+                            ],
                           ),
+                          SizedBox(height: 20),
+                          _buildProfileFieldWithLabel(
+                              'Name', _nameController, Icons.person),
+                          SizedBox(height: 5),
+                          _buildProfileFieldWithLabel(
+                              'Category', _categoryController, Icons.category),
+                          SizedBox(height: 5),
+                          _buildProfileFieldWithLabel(
+                              'Subject', _subjectController, Icons.book),
+                          SizedBox(height: 5),
+                          _buildProfileFieldWithLabel(
+                              'Topic', _topicController, Icons.topic),
+                          SizedBox(height: 5),
+                          _buildProfileFieldWithLabel(
+                              'Email', _emailController, Icons.email),
+                          SizedBox(height: 5),
+                          _buildProfileFieldWithLabel('Address',
+                              _addressController, Icons.location_city),
+                          SizedBox(height: 5),
+                          _buildProfileFieldWithLabel('LVtutor..',
+                              _educationLevelController, Icons.school),
+                          SizedBox(height: 20),
+                          _buildResumeSection(),
+                          SizedBox(height: 20),
+                          _buildReviewAndAddReviewSection(),
                         ],
                       ),
-                      SizedBox(height: 20),
-                      _buildProfileFieldWithLabel(
-                          'Name', _nameController, Icons.person),
-                      SizedBox(height: 5),
-                      _buildProfileFieldWithLabel(
-                          'Category', _categoryController, Icons.category),
-                      SizedBox(height: 5),
-                      _buildProfileFieldWithLabel(
-                          'Subject', _subjectController, Icons.book),
-                      SizedBox(height: 5),
-                      _buildProfileFieldWithLabel(
-                          'Topic', _topicController, Icons.topic),
-                      SizedBox(height: 5),
-                      _buildProfileFieldWithLabel(
-                          'Email', _emailController, Icons.email),
-                      SizedBox(height: 5),
-                      _buildProfileFieldWithLabel(
-                          'Address', _addressController, Icons.location_city),
-                      SizedBox(height: 20),
-                      _buildResumeSection(),
-                      SizedBox(height: 20),
-                      _buildReviewAndAddReviewSection(),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
     );
   }
@@ -658,6 +703,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
               child: Text('Submit Review'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue[800],
+                foregroundColor: Colors.white,
               ),
             ),
           ),

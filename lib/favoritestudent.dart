@@ -74,40 +74,112 @@ class _FavoriteStudentScreenState extends State<FavoriteStudentScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Favorite Students'),
+        backgroundColor: const Color.fromARGB(255, 28, 195, 198),
       ),
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator())
-          : _errorMessage != null
-              ? Center(child: Text(_errorMessage!))
-              : _favoriteStudents.isNotEmpty
-                  ? ListView.builder(
-                      padding: EdgeInsets.all(8.0),
-                      itemCount: _favoriteStudents.length,
-                      itemBuilder: (context, index) {
-                        final student = _favoriteStudents[index];
-                        final profileImageUrl =
-                            student['profile_images'] != null &&
+      body: Stack(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  const Color.fromARGB(255, 28, 195, 198),
+                  const Color.fromARGB(255, 249, 249, 249),
+                ],
+              ),
+            ),
+          ),
+          _isLoading
+              ? Center(child: CircularProgressIndicator())
+              : _errorMessage != null
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.error, color: Colors.red, size: 60),
+                            SizedBox(height: 16),
+                            Text(
+                              _errorMessage!,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                  fontSize: 18, color: Colors.black87),
+                            ),
+                            SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: _loadFavoriteStudents,
+                              child: Text('Retry'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blueAccent,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : _favoriteStudents.isNotEmpty
+                      ? ListView.builder(
+                          padding: EdgeInsets.all(8.0),
+                          itemCount: _favoriteStudents.length,
+                          itemBuilder: (context, index) {
+                            final student = _favoriteStudents[index];
+                            final profileImageUrl = student['profile_images'] !=
+                                        null &&
                                     student['profile_images'].isNotEmpty
-                                ? 'http://10.5.50.82/tutoring_app/uploads/' +
+                                ? 'http://10.5.50.82/tutoring_app/uploads/profile_images/' +
                                     student['profile_images']
                                 : 'images/default_profile.jpg';
 
-                        return Card(
-                          margin: EdgeInsets.symmetric(vertical: 8.0),
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              backgroundImage: profileImageUrl.contains('http')
-                                  ? NetworkImage(profileImageUrl)
-                                  : AssetImage(profileImageUrl)
-                                      as ImageProvider,
+                            return Card(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(15.0),
+                              ),
+                              elevation: 4,
+                              margin: EdgeInsets.symmetric(vertical: 8.0),
+                              child: ListTile(
+                                leading: CircleAvatar(
+                                  radius: 30,
+                                  backgroundImage:
+                                      profileImageUrl.contains('http')
+                                          ? NetworkImage(profileImageUrl)
+                                          : AssetImage(profileImageUrl)
+                                              as ImageProvider,
+                                ),
+                                title: Text(
+                                  student['name'] ?? 'Unknown',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 18),
+                                ),
+                                subtitle: Text('Click to view profile'),
+                                trailing: Icon(Icons.arrow_forward_ios),
+                                onTap: () => _viewStudentProfile(student),
+                              ),
+                            );
+                          },
+                        )
+                      : Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.person_outline,
+                                    color: Colors.grey, size: 100),
+                                SizedBox(height: 16),
+                                Text(
+                                  'No favorite students found',
+                                  style: TextStyle(
+                                      fontSize: 20, color: Colors.black54),
+                                ),
+                              ],
                             ),
-                            title: Text(student['name'] ?? 'Unknown'),
-                            onTap: () => _viewStudentProfile(student),
                           ),
-                        );
-                      },
-                    )
-                  : Center(child: Text('No favorite students found')),
+                        ),
+        ],
+      ),
     );
   }
 }

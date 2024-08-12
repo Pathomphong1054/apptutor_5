@@ -18,12 +18,29 @@ class _TutorRegistrationScreenState extends State<TutorRegistrationScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
+  final TextEditingController _bankNameController = TextEditingController();
+  final TextEditingController _accountNumberController =
+      TextEditingController();
+  final TextEditingController _accountNameController = TextEditingController();
+
+  String? _selectedEducationLevel =
+      'ประถม1-3'; // Default selected education level
   String? _selectedCategory = 'Language';
   String? _selectedSubject;
   String? _selectedTopic;
   String _selectedProvince = 'Bangkok';
   File? _profileImage;
   File? _resumeFile;
+
+  final List<String> educationLevels = [
+    'ประถม1-3',
+    'ประถม4-6',
+    'มัธยม1-3',
+    'มัธยม4-6',
+    'ปวช',
+    'ปวส',
+    'ป.ตรี',
+  ];
 
   final Map<String, List<String>> subjectsByCategory = {
     'Language': [
@@ -169,6 +186,10 @@ class _TutorRegistrationScreenState extends State<TutorRegistrationScreen> {
     final String subject = _selectedSubject!;
     final String topic = _selectedTopic!;
     final String address = _selectedProvince;
+    final String educationLevel = _selectedEducationLevel!;
+    final String bankName = _bankNameController.text;
+    final String accountNumber = _accountNumberController.text;
+    final String accountName = _accountNameController.text;
 
     if (password != confirmPassword) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -188,6 +209,10 @@ class _TutorRegistrationScreenState extends State<TutorRegistrationScreen> {
     request.fields['subject'] = subject;
     request.fields['topic'] = topic;
     request.fields['address'] = address;
+    request.fields['education_level'] = educationLevel;
+    request.fields['bank_name'] = bankName;
+    request.fields['account_number'] = accountNumber;
+    request.fields['account_name'] = accountName;
 
     if (_profileImage != null) {
       request.files.add(
@@ -230,6 +255,7 @@ class _TutorRegistrationScreenState extends State<TutorRegistrationScreen> {
                     : 'images/default_profile.jpg',
                 currentUserRole: 'Tutor',
                 idUser: '',
+                tutorName: '',
               ),
             ),
           );
@@ -276,293 +302,379 @@ class _TutorRegistrationScreenState extends State<TutorRegistrationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Tutor Registration'),
-      ),
       body: Stack(
         children: [
+          // Gradient Background
           Container(
             decoration: BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage('images/background.jpg'),
-                fit: BoxFit.cover,
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  const Color.fromARGB(255, 28, 195, 198),
+                  const Color.fromARGB(255, 249, 249, 249)
+                ],
               ),
             ),
           ),
           Center(
             child: Padding(
               padding: EdgeInsets.all(16.0),
-              child: Card(
-                elevation: 8,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16.0),
-                ),
-                child: Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: ListView(
-                    children: [
-                      Text(
-                        'Fill in the details to register as a tutor:',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).primaryColor,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      SizedBox(height: 20),
-                      Center(
-                        child: GestureDetector(
-                          onTap: _pickImage,
-                          child: CircleAvatar(
-                            radius: 60,
-                            backgroundImage: _profileImage != null
-                                ? FileImage(_profileImage!)
-                                : AssetImage('images/default_profile.jpg')
-                                    as ImageProvider,
-                            child: Align(
-                              alignment: Alignment.bottomRight,
-                              child: Icon(
-                                Icons.camera_alt,
-                                color: Colors.blue[800],
-                                size: 30,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 20),
-                      TextFormField(
-                        controller: _nameController,
-                        decoration: InputDecoration(
-                          labelText: 'Name',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.person),
-                        ),
-                      ),
-                      SizedBox(height: 10),
-                      TextFormField(
-                        controller: _emailController,
-                        decoration: InputDecoration(
-                          labelText: 'Email',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.email),
-                        ),
-                      ),
-                      SizedBox(height: 10),
-                      TextFormField(
-                        controller: _passwordController,
-                        decoration: InputDecoration(
-                          labelText: 'Password',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.lock),
-                        ),
-                        obscureText: true,
-                      ),
-                      SizedBox(height: 10),
-                      TextFormField(
-                        controller: _confirmPasswordController,
-                        decoration: InputDecoration(
-                          labelText: 'Confirm Password',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.lock),
-                        ),
-                        obscureText: true,
-                      ),
-                      SizedBox(height: 10),
-                      DropdownButtonFormField<String>(
-                        value: _selectedCategory,
-                        onChanged: (newValue) {
-                          setState(() {
-                            _selectedCategory = newValue;
-                            _selectedSubject = null;
-                            _selectedTopic = null;
-                          });
-                        },
-                        items: subjectsByCategory.keys
-                            .map<DropdownMenuItem<String>>((dynamic value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(value),
-                          );
-                        }).toList(),
-                        decoration: InputDecoration(
-                          labelText: 'Category',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.category),
-                        ),
-                      ),
-                      SizedBox(height: 10),
-                      DropdownButtonFormField<String>(
-                        value: _selectedSubject,
-                        onChanged: (newValue) {
-                          setState(() {
-                            _selectedSubject = newValue;
-                            _selectedTopic = null;
-                          });
-                        },
-                        items: (_selectedCategory != null
-                                ? subjectsByCategory[_selectedCategory]
-                                : [])!
-                            .map<DropdownMenuItem<String>>((dynamic value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(value),
-                          );
-                        }).toList(),
-                        decoration: InputDecoration(
-                          labelText: 'Subject',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.book),
-                        ),
-                      ),
-                      SizedBox(height: 10),
-                      DropdownButtonFormField<String>(
-                        value: _selectedTopic,
-                        onChanged: (newValue) {
-                          setState(() {
-                            _selectedTopic = newValue;
-                          });
-                        },
-                        items: (_selectedSubject != null
-                                ? topicsBySubject[_selectedSubject]
-                                : [])!
-                            .map<DropdownMenuItem<String>>((dynamic value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(value),
-                          );
-                        }).toList(),
-                        decoration: InputDecoration(
-                          labelText: 'Topic',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.topic),
-                        ),
-                      ),
-                      SizedBox(height: 10),
-                      DropdownButtonFormField<String>(
-                        value: _selectedProvince,
-                        onChanged: (newValue) {
-                          setState(() {
-                            _selectedProvince = newValue!;
-                          });
-                        },
-                        items: <String>[
-                          'Bangkok',
-                          'Krabi',
-                          'Kanchanaburi',
-                          'Kalasin',
-                          'Kamphaeng Phet',
-                          'Khon Kaen',
-                          'Chanthaburi',
-                          'Chachoengsao',
-                          'Chon Buri',
-                          'Chai Nat',
-                          'Chaiyaphum',
-                          'Chumphon',
-                          'Chiang Mai',
-                          'Chiang Rai',
-                          'Trang',
-                          'Trat',
-                          'Tak',
-                          'Nakhon Nayok',
-                          'Nakhon Pathom',
-                          'Nakhon Phanom',
-                          'Nakhon Ratchasima',
-                          'Nakhon Si Thammarat',
-                          'Nakhon Sawan',
-                          'Nonthaburi',
-                          'Narathiwat',
-                          'Nan',
-                          'Bueng Kan',
-                          'Buriram',
-                          'Pathum Thani',
-                          'Prachuap Khiri Khan',
-                          'Prachinburi',
-                          'Pattani',
-                          'Phra Nakhon Si Ayutthaya',
-                          'Phang Nga',
-                          'Phatthalung',
-                          'Phichit',
-                          'Phitsanulok',
-                          'Phetchaburi',
-                          'Phetchabun',
-                          'Phuket',
-                          'Maha Sarakham',
-                          'Mukdahan',
-                          'Mae Hong Son',
-                          'Yasothon',
-                          'Yala',
-                          'Roi Et',
-                          'Ranong',
-                          'Rayong',
-                          'Lopburi',
-                          'Lampang',
-                          'Lamphun',
-                          'Loei',
-                          'Si Sa Ket',
-                          'Sakon Nakhon',
-                          'Songkhla',
-                          'Satun',
-                          'Samut Prakan',
-                          'Samut Sakhon',
-                          'Samut Songkhram',
-                          'Saraburi',
-                          'Sing Buri',
-                          'Sukhothai',
-                          'Suphan Buri',
-                          'Surat Thani',
-                          'Surin',
-                          'Nong Khai',
-                          'Nong Bua Lamphu',
-                          'Amnat Charoen',
-                          'Udon Thani',
-                          'Uttaradit',
-                          'Uthai Thani',
-                          'Ubon Ratchathani',
-                        ].map<DropdownMenuItem<String>>((dynamic value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(value),
-                          );
-                        }).toList(),
-                        decoration: InputDecoration(
-                          labelText: 'Province',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.location_city),
-                        ),
-                      ),
-                      SizedBox(height: 20),
-                      Center(
-                        child: ElevatedButton(
-                          onPressed: _pickResume,
-                          child: Text('Upload Resume'),
-                          style: ElevatedButton.styleFrom(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 40, vertical: 15),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 20),
-                      Center(
-                        child: ElevatedButton(
-                          onPressed: () => registerTutor(context),
-                          child: Text('Register as Tutor'),
-                          style: ElevatedButton.styleFrom(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 40, vertical: 15),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+              child: ListView(
+                shrinkWrap: true,
+                children: [
+                  Text(
+                    'Fill in the details to register as a tutor:',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                ),
+                  SizedBox(height: 20),
+                  Center(
+                    child: GestureDetector(
+                      onTap: _pickImage,
+                      child: CircleAvatar(
+                        radius: 60,
+                        backgroundImage: _profileImage != null
+                            ? FileImage(_profileImage!)
+                            : AssetImage('images/default_profile.jpg')
+                                as ImageProvider,
+                        child: Align(
+                          alignment: Alignment.bottomRight,
+                          child: Icon(
+                            Icons.camera_alt,
+                            color: Colors.blue[800],
+                            size: 30,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  TextFormField(
+                    controller: _nameController,
+                    decoration: InputDecoration(
+                      labelText: 'Name',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide: BorderSide(
+                          color: Colors.black, // สีดำสำหรับขอบ
+                        ),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.9),
+                      prefixIcon: Icon(Icons.person, color: Colors.grey),
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  TextFormField(
+                    controller: _emailController,
+                    decoration: InputDecoration(
+                      labelText: 'Email',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide: BorderSide(
+                          color: Colors.black, // สีดำสำหรับขอบ
+                        ),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.9),
+                      prefixIcon: Icon(Icons.email, color: Colors.grey),
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  TextFormField(
+                    controller: _passwordController,
+                    decoration: InputDecoration(
+                      labelText: 'Password',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide: BorderSide(
+                          color: Colors.black, // สีดำสำหรับขอบ
+                        ),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.9),
+                      prefixIcon: Icon(Icons.lock, color: Colors.grey),
+                    ),
+                    obscureText: true,
+                  ),
+                  SizedBox(height: 10),
+                  TextFormField(
+                    controller: _confirmPasswordController,
+                    decoration: InputDecoration(
+                      labelText: 'Confirm Password',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide: BorderSide(
+                          color: Colors.black, // สีดำสำหรับขอบ
+                        ),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.9),
+                      prefixIcon: Icon(Icons.lock, color: Colors.grey),
+                    ),
+                    obscureText: true,
+                  ),
+                  SizedBox(height: 10),
+                  DropdownButtonFormField<String>(
+                    value: _selectedEducationLevel,
+                    onChanged: (newValue) {
+                      setState(() {
+                        _selectedEducationLevel = newValue;
+                      });
+                    },
+                    items: educationLevels
+                        .map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                    decoration: InputDecoration(
+                      labelText: 'Education Level',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide: BorderSide(
+                          color: Colors.black, // สีดำสำหรับขอบ
+                        ),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.9),
+                      prefixIcon: Icon(Icons.school, color: Colors.grey),
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  DropdownButtonFormField<String>(
+                    value: _selectedCategory,
+                    onChanged: (newValue) {
+                      setState(() {
+                        _selectedCategory = newValue;
+                        _selectedSubject = null;
+                        _selectedTopic = null;
+                      });
+                    },
+                    items: subjectsByCategory.keys
+                        .map<DropdownMenuItem<String>>((dynamic value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                    decoration: InputDecoration(
+                      labelText: 'Category',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide: BorderSide(
+                          color: Colors.black, // สีดำสำหรับขอบ
+                        ),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.9),
+                      prefixIcon: Icon(Icons.category, color: Colors.grey),
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  DropdownButtonFormField<String>(
+                    value: _selectedSubject,
+                    onChanged: (newValue) {
+                      setState(() {
+                        _selectedSubject = newValue;
+                        _selectedTopic = null;
+                      });
+                    },
+                    items: (_selectedCategory != null
+                            ? subjectsByCategory[_selectedCategory]
+                            : [])!
+                        .map<DropdownMenuItem<String>>((dynamic value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                    decoration: InputDecoration(
+                      labelText: 'Subject',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide: BorderSide(
+                          color: Colors.black, // สีดำสำหรับขอบ
+                        ),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.9),
+                      prefixIcon: Icon(Icons.book, color: Colors.grey),
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  DropdownButtonFormField<String>(
+                    value: _selectedTopic,
+                    onChanged: (newValue) {
+                      setState(() {
+                        _selectedTopic = newValue;
+                      });
+                    },
+                    items: (_selectedSubject != null
+                            ? topicsBySubject[_selectedSubject]
+                            : [])!
+                        .map<DropdownMenuItem<String>>((dynamic value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                    decoration: InputDecoration(
+                      labelText: 'Topic',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide: BorderSide(
+                          color: Colors.black, // สีดำสำหรับขอบ
+                        ),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.9),
+                      prefixIcon: Icon(Icons.topic, color: Colors.grey),
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  DropdownButtonFormField<String>(
+                    value: _selectedProvince,
+                    onChanged: (newValue) {
+                      setState(() {
+                        _selectedProvince = newValue!;
+                      });
+                    },
+                    items: <String>[
+                      'Bangkok',
+                      'Krabi',
+                      'Kanchanaburi',
+                      'Kalasin',
+                      'Kamphaeng Phet',
+                      'Khon Kaen',
+                      'Chanthaburi',
+                      'Chachoengsao',
+                      'Chon Buri',
+                      'Chai Nat',
+                      'Chaiyaphum',
+                      'Chumphon',
+                      'Chiang Mai',
+                      'Chiang Rai',
+                      'Trang',
+                      'Trat',
+                      'Tak',
+                      'Nakhon Nayok',
+                      'Nakhon Pathom',
+                      'Nakhon Phanom',
+                      'Nakhon Ratchasima',
+                      'Nakhon Si Thammarat',
+                      'Nakhon Sawan',
+                      'Nonthaburi',
+                      'Narathiwat',
+                      'Nan',
+                      'Bueng Kan',
+                      'Buriram',
+                      'Pathum Thani',
+                      'Prachuap Khiri Khan',
+                      'Prachinburi',
+                      'Pattani',
+                      'Phra Nakhon Si Ayutthaya',
+                      'Phang Nga',
+                      'Phatthalung',
+                      'Phichit',
+                      'Phitsanulok',
+                      'Phetchaburi',
+                      'Phetchabun',
+                      'Phuket',
+                      'Maha Sarakham',
+                      'Mukdahan',
+                      'Mae Hong Son',
+                      'Yasothon',
+                      'Yala',
+                      'Roi Et',
+                      'Ranong',
+                      'Rayong',
+                      'Lopburi',
+                      'Lampang',
+                      'Lamphun',
+                      'Loei',
+                      'Si Sa Ket',
+                      'Sakon Nakhon',
+                      'Songkhla',
+                      'Satun',
+                      'Samut Prakan',
+                      'Samut Sakhon',
+                      'Samut Songkhram',
+                      'Saraburi',
+                      'Sing Buri',
+                      'Sukhothai',
+                      'Suphan Buri',
+                      'Surat Thani',
+                      'Surin',
+                      'Nong Khai',
+                      'Nong Bua Lamphu',
+                      'Amnat Charoen',
+                      'Udon Thani',
+                      'Uttaradit',
+                      'Uthai Thani',
+                      'Ubon Ratchathani',
+                    ].map<DropdownMenuItem<String>>((dynamic value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                    decoration: InputDecoration(
+                      labelText: 'Province',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide: BorderSide(
+                          color: Colors.black, // สีดำสำหรับขอบ
+                        ),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.9),
+                      prefixIcon: Icon(Icons.location_city, color: Colors.grey),
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  Center(
+                    child: ElevatedButton(
+                      onPressed: _pickResume,
+                      child: Text('Upload Resume'),
+                      style: ElevatedButton.styleFrom(
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                        backgroundColor: const Color.fromARGB(255, 5, 162, 186),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  Center(
+                    child: ElevatedButton(
+                      onPressed: () => registerTutor(context),
+                      child: Text(
+                        'Register as Tutor',
+                        style: TextStyle(
+                          color: Colors.white, // กำหนดสีตัวอักษรที่นี่
+                          fontSize: 16, // ขนาดตัวอักษร (สามารถปรับได้)
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                        backgroundColor: const Color.fromARGB(255, 5, 162, 186),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

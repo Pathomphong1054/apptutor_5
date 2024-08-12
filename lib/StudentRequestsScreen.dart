@@ -6,8 +6,10 @@ import 'dart:convert';
 
 class StudentRequestsScreen extends StatefulWidget {
   final String userName;
+  final String idUser;
 
-  StudentRequestsScreen({required this.userName, required String userRole});
+  StudentRequestsScreen(
+      {required this.userName, required String userRole, required this.idUser});
 
   @override
   _StudentRequestsScreenState createState() => _StudentRequestsScreenState();
@@ -16,6 +18,7 @@ class StudentRequestsScreen extends StatefulWidget {
 class _StudentRequestsScreenState extends State<StudentRequestsScreen> {
   List<dynamic> requests = [];
   bool isLoading = false;
+  String tutorId = '';
 
   @override
   void initState() {
@@ -71,20 +74,40 @@ class _StudentRequestsScreenState extends State<StudentRequestsScreen> {
     if (response.statusCode == 200) {
       var responseData = json.decode(response.body);
       if (responseData['status'] == 'success') {
+        setState(() {
+          requests
+              .removeWhere((request) => request['id'] == requestId.toString());
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Request responded successfully')),
         );
-        _fetchRequests();
         if (isAccepted && responseData['sessionId'] != null) {
           _navigateToChatScreen(
               tutorName, tutorProfileImage, responseData['sessionId']);
         }
+
+        // ลบคำขอออกจากฐานข้อมูล
+        await _deleteRequestFromDatabase(requestId);
       } else {
         _showErrorSnackBar(
             'Failed to respond to request: ${responseData['message']}');
       }
     } else {
       _showErrorSnackBar('Failed to respond to request');
+    }
+  }
+
+  Future<void> _deleteRequestFromDatabase(int requestId) async {
+    var response = await http.post(
+      Uri.parse('http://10.5.50.82/tutoring_app/delete_request.php'),
+      body: json.encode({
+        'request_id': requestId,
+      }),
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    if (response.statusCode != 200) {
+      _showErrorSnackBar('Failed to delete request from database');
     }
   }
 
@@ -100,7 +123,10 @@ class _StudentRequestsScreenState extends State<StudentRequestsScreen> {
           currentUserImage:
               '', // Add the current user's profile image URL here if available
           sessionId: sessionId,
-          currentUserRole: 'student', // Adjust this based on the user's role
+          currentUserRole: 'student',
+          idUser: widget.idUser,
+          userId: widget.idUser,
+          tutorId: tutorId, // Adjust this based on the user's role
         ),
       ),
     );
@@ -112,14 +138,17 @@ class _StudentRequestsScreenState extends State<StudentRequestsScreen> {
       MaterialPageRoute(
         builder: (context) => TutorProfileScreen(
           userName: tutorName,
-          userRole: 'tutor',
+          userRole: 'Tutor',
           canEdit: false,
           currentUser: widget.userName,
           currentUserImage:
               '', // Add the current user's profile image URL here if available
           onProfileUpdated: () {},
           username: tutorName,
-          profileImageUrl: tutorProfileImage, userId: '', tutorId: '',
+          profileImageUrl: tutorProfileImage,
+          userId: widget.idUser,
+          tutorId: tutorId,
+          idUser: widget.idUser,
         ),
       ),
     );
@@ -136,58 +165,98 @@ class _StudentRequestsScreenState extends State<StudentRequestsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Student Requests'),
+        backgroundColor: const Color.fromARGB(255, 28, 195, 198),
       ),
       body: isLoading
           ? Center(child: CircularProgressIndicator())
-          : ListView.builder(
-              itemCount: requests.length,
-              itemBuilder: (context, index) {
-                final request = requests[index];
-                final tutorName = request['sender'];
-                final tutorProfileImage = request['profileImage'];
-                final isAccepted = request['is_accepted'] == 1;
-
-                return ListTile(
-                  leading: GestureDetector(
-                    onTap: () =>
-                        _viewTutorProfile(tutorName, tutorProfileImage),
-                    child: CircleAvatar(
-                      backgroundImage: tutorProfileImage != null &&
-                              tutorProfileImage.isNotEmpty
-                          ? NetworkImage(
-                              'http://10.5.50.82/tutoring_app/uploads/$tutorProfileImage')
-                          : AssetImage('images/default_profile.jpg')
-                              as ImageProvider,
+          : requests.isEmpty
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.hourglass_empty,
+                            color: Colors.grey, size: 60),
+                        SizedBox(height: 16),
+                        Text(
+                          'No requests found',
+                          style: TextStyle(fontSize: 18, color: Colors.black54),
+                        ),
+                      ],
                     ),
                   ),
-                  title: Text(request['sender']),
-                  subtitle: Text(request['message']),
-                  trailing: isAccepted
-                      ? null
-                      : Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            TextButton(
-                              onPressed: () {
-                                int requestId = int.parse(request['id']);
-                                _respondToRequest(requestId, true, tutorName,
-                                    tutorProfileImage);
-                              },
-                              child: Text('Accept'),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                int requestId = int.parse(request['id']);
-                                _respondToRequest(requestId, false, tutorName,
-                                    tutorProfileImage);
-                              },
-                              child: Text('Decline'),
-                            ),
-                          ],
+                )
+              : ListView.builder(
+                  itemCount: requests.length,
+                  itemBuilder: (context, index) {
+                    final request = requests[index];
+                    final tutorName = request['sender'];
+                    final tutorProfileImage = request['profileImage'];
+                    final isAccepted = request['is_accepted'] == 1;
+
+                    return Card(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      elevation: 4,
+                      margin:
+                          EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                      child: ListTile(
+                        leading: GestureDetector(
+                          onTap: () =>
+                              _viewTutorProfile(tutorName, tutorProfileImage),
+                          child: CircleAvatar(
+                            backgroundImage: tutorProfileImage != null &&
+                                    tutorProfileImage.isNotEmpty
+                                ? NetworkImage(
+                                    'http://10.5.50.82/tutoring_app/uploads/$tutorProfileImage')
+                                : AssetImage('images/default_profile.jpg')
+                                    as ImageProvider,
+                          ),
                         ),
-                );
-              },
-            ),
+                        title: Text(
+                          request['sender'],
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                        subtitle: Text(
+                          request['message'],
+                          style: TextStyle(color: Colors.grey[600]),
+                        ),
+                        trailing: isAccepted
+                            ? null
+                            : Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  TextButton(
+                                    onPressed: () {
+                                      int requestId = int.parse(request['id']);
+                                      _respondToRequest(requestId, true,
+                                          tutorName, tutorProfileImage);
+                                    },
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: Colors.green,
+                                    ),
+                                    child: Text('Accept'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      int requestId = int.parse(request['id']);
+                                      _respondToRequest(requestId, false,
+                                          tutorName, tutorProfileImage);
+                                    },
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: Colors.red,
+                                    ),
+                                    child: Text('Decline'),
+                                  ),
+                                ],
+                              ),
+                      ),
+                    );
+                  },
+                ),
     );
   }
 }

@@ -56,6 +56,7 @@ class _LoginScreenStudentState extends State<LoginScreenStudent> {
                 profileImageUrl: profileImageUrl,
                 currentUserRole: 'student',
                 idUser: idUser,
+                tutorName: '',
               ),
             ),
           );
@@ -79,118 +80,142 @@ class _LoginScreenStudentState extends State<LoginScreenStudent> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Student Login'),
-      ),
       body: Stack(
         children: [
           Container(
             decoration: BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage("images/background.jpg"),
-                fit: BoxFit.cover,
+              gradient: LinearGradient(
+                colors: [
+                  const Color.fromARGB(255, 28, 195, 198),
+                  const Color.fromARGB(255, 249, 249, 249)
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
               ),
             ),
           ),
           Center(
             child: Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Card(
-                elevation: 8,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16.0),
-                ),
-                child: Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: ListView(
-                    shrinkWrap: true,
-                    children: [
-                      Center(
-                        child: Image.asset(
-                          'images/apptutor.png',
-                          height: 150,
-                          width: 150,
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-                      SizedBox(height: 20),
-                      Text(
-                        'Login to your account:',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).primaryColor,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      SizedBox(height: 20),
-                      TextFormField(
-                        controller: _emailController,
-                        decoration: InputDecoration(
-                          labelText: 'Email',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.email),
-                        ),
-                      ),
-                      SizedBox(height: 10),
-                      TextFormField(
-                        controller: _passwordController,
-                        decoration: InputDecoration(
-                          labelText: 'Password',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.lock),
-                        ),
-                        obscureText: true,
-                      ),
-                      SizedBox(height: 20),
-                      Center(
-                        child: _isLoading
-                            ? CircularProgressIndicator()
-                            : ElevatedButton(
-                                onPressed: () => login(context),
-                                child: Text('Login'),
-                                style: ElevatedButton.styleFrom(
-                                  padding: EdgeInsets.symmetric(
-                                      horizontal: 40, vertical: 15),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(30),
-                                  ),
-                                ),
-                              ),
-                      ),
-                      SizedBox(height: 20),
-                      Center(
-                        child: TextButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    StudentRegistrationScreen(),
-                              ),
-                            );
-                          },
-                          child: Text('Don\'t have an account? Register here'),
-                        ),
-                      ),
-                      SizedBox(height: 10),
-                      Center(
-                        child: TextButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    UpdatePasswordScreen(userRole: 'student'),
-                              ),
-                            );
-                          },
-                          child: Text('Forgot Password? Reset here'),
-                        ),
-                      ),
-                    ],
+              padding: EdgeInsets.symmetric(horizontal: 24.0),
+              child: ListView(
+                shrinkWrap: true,
+                children: [
+                  Center(
+                    child: Image.asset(
+                      'images/apptutor.png',
+                      height: 120,
+                      fit: BoxFit.contain,
+                    ),
                   ),
-                ),
+                  SizedBox(height: 20),
+                  Text(
+                    'Welcome Back!',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    'Please login to your account',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.black54,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 30),
+                  TextFormField(
+                    controller: _emailController,
+                    decoration: InputDecoration(
+                      labelText: 'Email',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      prefixIcon: Icon(Icons.email),
+                      filled: true,
+                      fillColor: Colors.grey[200],
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  TextFormField(
+                    controller: _passwordController,
+                    decoration: InputDecoration(
+                      labelText: 'Password',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      prefixIcon: Icon(Icons.lock),
+                      filled: true,
+                      fillColor: Colors.grey[200],
+                    ),
+                    obscureText: true,
+                  ),
+                  SizedBox(height: 30),
+                  Center(
+                    child: _isLoading
+                        ? CircularProgressIndicator()
+                        : ElevatedButton(
+                            onPressed: () => login(context),
+                            child: Text(
+                              'Login',
+                              style:
+                                  TextStyle(fontSize: 18, color: Colors.white),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 80, vertical: 15),
+                              backgroundColor:
+                                  const Color.fromARGB(255, 5, 162, 186),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                            ),
+                          ),
+                  ),
+                  SizedBox(height: 20),
+                  Center(
+                    child: TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => StudentRegistrationScreen(),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        'Don\'t have an account? Register here',
+                        style: TextStyle(
+                          color: Colors.blueAccent,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Center(
+                    child: TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                UpdatePasswordScreen(userRole: 'student'),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        'Forgot Password? Reset here',
+                        style: TextStyle(
+                          color: Colors.redAccent,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

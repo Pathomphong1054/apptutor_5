@@ -1,17 +1,20 @@
-import 'package:apptutor_2/chat_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
+import 'chat_screen.dart';
+
 class ChatListScreen extends StatefulWidget {
   final String currentUser;
   final String currentUserImage;
-  final String currentUserRole; // Add this field
+  final String currentUserRole;
+  final String idUser;
 
   const ChatListScreen({
     required this.currentUser,
     required this.currentUserImage,
-    required this.currentUserRole, // Add this field
+    required this.currentUserRole,
+    required this.idUser,
   });
 
   @override
@@ -22,6 +25,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
   List<Map<String, dynamic>> _conversations = [];
   bool _isLoading = true;
   String? _errorMessage;
+  String tutorId = '';
 
   @override
   void initState() {
@@ -34,28 +38,22 @@ class _ChatListScreenState extends State<ChatListScreen> {
       final response = await http.get(Uri.parse(
           'http://10.5.50.82/tutoring_app/fetch_conversations.php?user=${widget.currentUser}'));
       if (response.statusCode == 200) {
-        print('Response body: ${response.body}');
-        try {
-          final responseData = json.decode(response.body);
-          if (responseData['status'] == 'success') {
-            setState(() {
-              _conversations = List<Map<String, dynamic>>.from(
-                  responseData['conversations']);
-              _isLoading = false;
-            });
-          } else {
-            throw Exception(
-                'Failed to load conversations: ${responseData['message']}');
-          }
-        } catch (e) {
-          throw Exception('Failed to parse conversations: $e');
+        final responseData = json.decode(response.body);
+        if (responseData['status'] == 'success') {
+          setState(() {
+            _conversations =
+                List<Map<String, dynamic>>.from(responseData['conversations']);
+            _isLoading = false;
+          });
+        } else {
+          throw Exception(
+              'Failed to load conversations: ${responseData['message']}');
         }
       } else {
         throw Exception(
             'Failed to load conversations: ${response.reasonPhrase}');
       }
     } catch (e) {
-      print('Error: $e');
       setState(() {
         _errorMessage = 'Failed to load conversations: $e';
         _isLoading = false;
@@ -88,12 +86,15 @@ class _ChatListScreenState extends State<ChatListScreen> {
           context,
           MaterialPageRoute(
             builder: (context) => ChatScreen(
-              currentUser: widget.currentUser, // Fix this
+              currentUser: widget.currentUser,
               recipient: recipient,
               recipientImage: recipientImage,
-              currentUserImage: widget.currentUserImage, // Fix this
+              currentUserImage: widget.currentUserImage,
               sessionId: sessionId,
-              currentUserRole: widget.currentUserRole, // Fix this
+              currentUserRole: widget.currentUserRole,
+              idUser: widget.idUser,
+              userId: widget.idUser,
+              tutorId: tutorId,
             ),
           ),
         );
@@ -109,70 +110,160 @@ class _ChatListScreenState extends State<ChatListScreen> {
     }
   }
 
+  Future<void> _deleteConversation(int index) async {
+    final conversation = _conversations[index];
+    try {
+      final response = await http.post(
+        Uri.parse('http://10.5.50.82/tutoring_app/delete_conversation.php'),
+        body: {
+          'user': widget.currentUser,
+          'recipient': conversation['recipient_username'],
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        if (responseData['status'] == 'success') {
+          setState(() {
+            _conversations.removeAt(index);
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Conversation deleted')),
+          );
+        } else {
+          throw Exception(
+              'Failed to delete conversation: ${responseData['message']}');
+        }
+      } else {
+        throw Exception(
+            'Failed to delete conversation: ${response.reasonPhrase}');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to delete conversation: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('Chats'),
+        backgroundColor: const Color.fromARGB(255, 28, 195, 198),
+        elevation: 0,
       ),
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator())
-          : _errorMessage != null
-              ? Center(child: Text(_errorMessage!))
-              : _conversations.isNotEmpty
-                  ? ListView.builder(
-                      itemCount: _conversations.length,
-                      itemBuilder: (context, index) {
-                        final conversation = _conversations[index];
-                        return Card(
-                          margin: EdgeInsets.symmetric(
-                              vertical: 8.0, horizontal: 16.0),
-                          elevation: 2.0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15.0),
-                          ),
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              backgroundImage: conversation[
-                                          'recipient_image'] !=
-                                      null
-                                  ? NetworkImage(
-                                      'http://10.5.50.82/tutoring_app/uploads/${conversation['recipient_image']}')
-                                  : AssetImage('images/default_profile.jpg')
-                                      as ImageProvider,
-                            ),
-                            title: Text(conversation['conversation_with'] ??
-                                'unknown_user'),
-                            subtitle: ConstrainedBox(
-                              constraints: BoxConstraints(
-                                maxWidth:
-                                    MediaQuery.of(context).size.width - 100,
-                              ),
-                              child: Text(
-                                conversation['last_message'] ?? '',
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            trailing: Text(
-                              conversation['timestamp'] != null
-                                  ? _formatTimestamp(conversation['timestamp'])
-                                  : '',
-                              style:
-                                  TextStyle(fontSize: 12, color: Colors.grey),
-                            ),
-                            onTap: () {
-                              _navigateToChatScreen(
-                                  conversation['recipient_username'] ??
-                                      'unknown_user',
-                                  conversation['recipient_image'] != null
-                                      ? 'http://10.5.50.82/tutoring_app/uploads/${conversation['recipient_image']}'
-                                      : 'images/default_profile.jpg');
-                            },
-                          ),
-                        );
-                      },
+      body: Stack(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  const Color.fromARGB(255, 28, 195, 198),
+                  const Color.fromARGB(255, 249, 249, 249),
+                ],
+              ),
+            ),
+          ),
+          _isLoading
+              ? Center(child: CircularProgressIndicator())
+              : _errorMessage != null
+                  ? Center(
+                      child: Text(
+                        _errorMessage!,
+                        style: TextStyle(color: Colors.red, fontSize: 18),
+                      ),
                     )
-                  : Center(child: Text('No conversations found')),
+                  : _conversations.isNotEmpty
+                      ? ListView.builder(
+                          itemCount: _conversations.length,
+                          itemBuilder: (context, index) {
+                            final conversation = _conversations[index];
+                            return Dismissible(
+                              key: Key(conversation['recipient_username']),
+                              direction: DismissDirection.endToStart,
+                              onDismissed: (direction) {
+                                _deleteConversation(index);
+                              },
+                              background: Container(
+                                alignment: Alignment.centerRight,
+                                padding: EdgeInsets.symmetric(horizontal: 20),
+                                color: Colors.red,
+                                child: Icon(Icons.delete, color: Colors.white),
+                              ),
+                              child: Card(
+                                margin: EdgeInsets.symmetric(
+                                    vertical: 8.0, horizontal: 16.0),
+                                elevation: 2.0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(15.0),
+                                ),
+                                child: ListTile(
+                                  leading: CircleAvatar(
+                                    backgroundImage: conversation[
+                                                'recipient_image'] !=
+                                            null
+                                        ? NetworkImage(
+                                            'http://10.5.50.82/tutoring_app/uploads/${conversation['recipient_image']}')
+                                        : AssetImage(
+                                                'images/default_profile.jpg')
+                                            as ImageProvider,
+                                  ),
+                                  title: Text(
+                                    conversation['conversation_with'] ??
+                                        'unknown_user',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  subtitle: ConstrainedBox(
+                                    constraints: BoxConstraints(
+                                      maxWidth:
+                                          MediaQuery.of(context).size.width -
+                                              100,
+                                    ),
+                                    child: Text(
+                                      conversation['last_message'] ?? '',
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                  ),
+                                  trailing: Text(
+                                    conversation['timestamp'] != null
+                                        ? _formatTimestamp(
+                                            conversation['timestamp'])
+                                        : '',
+                                    style: TextStyle(
+                                        fontSize: 12, color: Colors.grey),
+                                  ),
+                                  onTap: () {
+                                    _navigateToChatScreen(
+                                      conversation['recipient_username'] ??
+                                          'unknown_user',
+                                      conversation['recipient_image'] != null
+                                          ? 'http://10.5.50.82/tutoring_app/uploads/${conversation['recipient_image']}'
+                                          : 'images/default_profile.jpg',
+                                    );
+                                  },
+                                ),
+                              ),
+                            );
+                          },
+                        )
+                      : Center(
+                          child: Text(
+                            'No conversations found',
+                            style: TextStyle(
+                                fontSize: 18, color: Colors.grey[700]),
+                          ),
+                        ),
+        ],
+      ),
     );
   }
 
@@ -183,7 +274,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
     if (dateTime.year == now.year &&
         dateTime.month == now.month &&
         dateTime.day == now.day) {
-      return '${dateTime.hour}:${dateTime.minute}';
+      return '${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
     } else {
       return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
     }

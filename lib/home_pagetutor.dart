@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'dart:convert';
-import 'package:apptutor_2/chat_screen.dart';
-import 'package:apptutor_2/selection_screen.dart';
+import 'package:apptutor_2/SettingsScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
+import 'TutorSentRequestsScreen.dart';
+import 'chat_screen.dart';
+import 'selection_screen.dart';
 import 'ChatListScreen.dart';
 import 'StudentProfileScreen.dart';
 import 'StudentRequestsScreen.dart';
@@ -19,6 +22,7 @@ class HomePage2 extends StatefulWidget {
   final String profileImageUrl;
   final String currentUserRole;
   final String idUser;
+  final String tutorName;
 
   const HomePage2({
     Key? key,
@@ -27,13 +31,15 @@ class HomePage2 extends StatefulWidget {
     required this.profileImageUrl,
     required this.currentUserRole,
     required this.idUser,
+    required this.tutorName,
   }) : super(key: key);
 
   @override
   _HomePage2State createState() => _HomePage2State();
 }
 
-class _HomePage2State extends State<HomePage2> {
+class _HomePage2State extends State<HomePage2>
+    with AutomaticKeepAliveClientMixin {
   List<dynamic> tutors = [];
   List<dynamic> topRatedTutors = [];
   List<dynamic> messages = [];
@@ -42,9 +48,13 @@ class _HomePage2State extends State<HomePage2> {
   String? _userName;
   String searchQuery = '';
   String tutorId = '';
+  int _selectedIndex = 0; // Track the selected index
   final TextEditingController _postController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
   final TextEditingController _dateTimeController = TextEditingController();
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -56,6 +66,11 @@ class _HomePage2State extends State<HomePage2> {
     }
     _fetchProfileImage();
     _fetchMessages();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   Future<void> _fetchTutors() async {
@@ -122,7 +137,7 @@ class _HomePage2State extends State<HomePage2> {
           setState(() {
             _profileImageUrl = data['profile_image'] != null
                 ? 'http://10.5.50.82/tutoring_app/uploads/${data['profile_image']}'
-                : 'images/default_profile.jpg'; // ใช้รูปภาพเริ่มต้นถ้าไม่มีรูปภาพในฐานข้อมูล
+                : 'images/default_profile.jpg';
             _userName = data['name'];
           });
         } else {
@@ -202,6 +217,13 @@ class _HomePage2State extends State<HomePage2> {
     }
   }
 
+  void _removeTutorPost(String tutorName) {
+    setState(() {
+      tutors.removeWhere((tutor) => tutor['name'] == tutorName);
+      _filterAndSortTutors();
+    });
+  }
+
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(message)));
@@ -219,6 +241,9 @@ class _HomePage2State extends State<HomePage2> {
           currentUserImage: widget.profileImageUrl,
           sessionId: sessionId,
           currentUserRole: widget.userRole,
+          idUser: widget.idUser,
+          userId: widget.idUser,
+          tutorId: tutorId,
         ),
       ),
     );
@@ -242,6 +267,8 @@ class _HomePage2State extends State<HomePage2> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('คำขอถูกส่งเรียบร้อย')),
         );
+        _fetchMessages();
+        _removeTutorPost(recipient);
       } else {
         _showErrorSnackBar('ส่งคำขอไม่สำเร็จ: ${responseData['message']}');
       }
@@ -263,13 +290,14 @@ class _HomePage2State extends State<HomePage2> {
                 userName: userName,
                 onProfileUpdated: _onProfileUpdated,
                 canEdit: false,
-                userRole: 'tutor',
+                userRole: 'Tutor',
                 currentUser: widget.userName,
                 currentUserImage: widget.profileImageUrl,
                 userId: widget.idUser,
                 tutorId: tutorId,
                 profileImageUrl: _profileImageUrl ?? '',
                 username: '',
+                idUser: widget.idUser,
               )
             : StudentProfileScreen(
                 userName: userName,
@@ -285,24 +313,132 @@ class _HomePage2State extends State<HomePage2> {
     });
   }
 
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+
+    switch (index) {
+      case 0:
+        break;
+      case 1:
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ChatListScreen(
+              currentUser: widget.userName,
+              currentUserImage: widget.profileImageUrl,
+              currentUserRole: widget.userRole,
+              idUser: widget.idUser,
+            ),
+          ),
+        );
+        break;
+      case 2:
+        if (widget.userRole == 'student') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => FavoriteTutorsScreen(
+                currentUser: widget.userName,
+                userId: widget.idUser,
+                currentUserImage: '',
+                idUser: widget.idUser,
+              ),
+            ),
+          );
+        } else if (widget.userRole == 'Tutor') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => FavoriteStudentScreen(
+                currentUser: widget.userName,
+                userId: widget.idUser,
+                currentUserImage: '',
+              ),
+            ),
+          );
+        }
+        break;
+      case 3:
+        if (widget.userRole == 'student') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => StudentRequestsScreen(
+                userName: widget.userName,
+                userRole: widget.userRole,
+                idUser: widget.idUser,
+              ),
+            ),
+          );
+        }
+        if (widget.userRole == 'Tutor') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => TutorSentRequestsScreen(
+                tutorName: 'ชื่อของติวเตอร์', // ระบุชื่อติวเตอร์ที่ต้องการส่งไป
+                tutorId: 'idของติวเตอร์',
+                userRole: 'roleของผู้ใช้',
+                userName: 'ชื่อผู้ใช้',
+                idUser: 'idของผู้ใช้',
+              ),
+            ),
+          );
+        }
+        break;
+      case 4:
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => NotificationScreen(
+              userName: widget.userName,
+              userRole: widget.userRole,
+              idUser: widget.idUser,
+            ),
+          ),
+        );
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(
       appBar: AppBar(
         title: Text('Home'),
-        backgroundColor: Colors.blue[800],
+        backgroundColor: const Color.fromARGB(255, 28, 195, 198),
       ),
       drawer: _buildDrawer(),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildSearchField(),
-            _buildCommonSection(),
-            widget.userRole == 'student'
-                ? _buildStudentBody()
-                : _buildTutorBody(),
-          ],
-        ),
+      body: Stack(
+        children: [
+          // Gradient Background
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  const Color.fromARGB(255, 28, 195, 198),
+                  const Color.fromARGB(255, 249, 249, 249)
+                ],
+              ),
+            ),
+          ),
+          SingleChildScrollView(
+            child: Column(
+              children: [
+                _buildSearchField(),
+                _buildCommonSection(),
+                widget.userRole == 'student'
+                    ? _buildStudentBody()
+                    : _buildTutorBody(),
+              ],
+            ),
+          ),
+        ],
       ),
       bottomNavigationBar: _buildBottomNavigationBar(),
     );
@@ -332,42 +468,82 @@ class _HomePage2State extends State<HomePage2> {
                             userName: _userName!,
                             onProfileUpdated: _onProfileUpdated,
                             canEdit: true,
-                            userRole: 'tutor',
+                            userRole: 'Tutor',
                             currentUser: widget.userName,
                             currentUserImage: widget.profileImageUrl,
                             username: '',
                             profileImageUrl: '',
                             userId: widget.idUser,
                             tutorId: tutorId,
+                            idUser: widget.idUser,
                           ),
                   ),
                 );
                 _onProfileUpdated();
               },
               child: CircleAvatar(
-                backgroundImage: _profileImageUrl != null &&
-                        _profileImageUrl!.isNotEmpty
-                    ? NetworkImage(_profileImageUrl!)
-                    : AssetImage('images/default_profile.jpg') as ImageProvider,
+                radius: 30,
+                backgroundColor: Colors.grey.shade200,
+                child: ClipOval(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black45,
+                          blurRadius: 8,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: FadeInImage.assetNetwork(
+                      placeholder: 'images/default_profile.jpg',
+                      image: _profileImageUrl != null &&
+                              _profileImageUrl!.isNotEmpty
+                          ? _profileImageUrl!
+                          : 'images/default_profile.jpg',
+                      fit: BoxFit.cover,
+                      width: 60,
+                      height: 60,
+                      imageErrorBuilder: (context, error, stackTrace) {
+                        return Image.asset('images/default_profile.jpg',
+                            fit: BoxFit.cover, width: 60, height: 60);
+                      },
+                    ),
+                  ),
+                ),
               ),
             ),
             decoration: BoxDecoration(
-              color: Colors.blue[800],
+              color: const Color.fromARGB(255, 28, 195, 198),
+              // Gradient background
+              gradient: LinearGradient(
+                colors: [
+                  const Color.fromARGB(255, 28, 195, 198),
+                  const Color.fromARGB(255, 5, 102, 106)
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
             ),
           ),
           ListTile(
-            leading: Icon(Icons.settings),
+            leading: Icon(Icons.settings, color: Colors.blueAccent),
             title: Text('Settings', style: TextStyle(fontSize: 18)),
-            onTap: () {},
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => SettingsScreen()),
+              );
+            },
           ),
-          if (widget.userRole == 'tutor')
+          if (widget.userRole == 'Tutor')
             ListTile(
-              leading: Icon(Icons.class_),
+              leading: Icon(Icons.class_, color: Colors.blueAccent),
               title: Text('My Class', style: TextStyle(fontSize: 18)),
               onTap: () {},
             ),
           ListTile(
-            leading: Icon(Icons.logout),
+            leading: Icon(Icons.logout, color: Colors.blueAccent),
             title: Text('Log Out', style: TextStyle(fontSize: 18)),
             onTap: () {
               Navigator.push(context,
@@ -447,6 +623,7 @@ class _HomePage2State extends State<HomePage2> {
               userName: widget.userName,
               userRole: widget.userRole,
               profileImageUrl: widget.profileImageUrl,
+              idUser: widget.idUser,
             ),
           ),
         );
@@ -520,6 +697,7 @@ class _HomePage2State extends State<HomePage2> {
                                 tutorId: tutor['id'].toString(),
                                 profileImageUrl: profileImageUrl,
                                 username: name,
+                                idUser: widget.idUser,
                               ),
                             ),
                           );
@@ -699,83 +877,123 @@ class _HomePage2State extends State<HomePage2> {
     return BottomNavigationBar(
       items: [
         BottomNavigationBarItem(
-            icon: Icon(Icons.home, color: Colors.blue), label: 'Home'),
+          icon: Container(
+            decoration: BoxDecoration(
+              color: Colors.blue.shade50,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.blue.withOpacity(0.5),
+                  blurRadius: 8,
+                  offset: Offset(0, 4),
+                ),
+              ],
+            ),
+            padding: EdgeInsets.all(8),
+            child: Icon(
+              Icons.home,
+              color: _selectedIndex == 0 ? Colors.blue : Colors.grey,
+              size: _selectedIndex == 0 ? 35 : 25,
+            ),
+          ),
+          label: 'Home',
+        ),
         BottomNavigationBarItem(
-            icon: Icon(Icons.chat, color: Colors.green), label: 'Chat'),
+          icon: Container(
+            decoration: BoxDecoration(
+              color: Colors.green.shade50,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.green.withOpacity(0.5),
+                  blurRadius: 8,
+                  offset: Offset(0, 4),
+                ),
+              ],
+            ),
+            padding: EdgeInsets.all(8),
+            child: Icon(
+              Icons.chat,
+              color: _selectedIndex == 1 ? Colors.green : Colors.grey,
+              size: _selectedIndex == 1 ? 35 : 25,
+            ),
+          ),
+          label: 'Chat',
+        ),
         BottomNavigationBarItem(
-            icon: Icon(Icons.favorite, color: Colors.red), label: 'Favorites'),
+          icon: Container(
+            decoration: BoxDecoration(
+              color: Colors.red.shade50,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.red.withOpacity(0.5),
+                  blurRadius: 8,
+                  offset: Offset(0, 4),
+                ),
+              ],
+            ),
+            padding: EdgeInsets.all(8),
+            child: Icon(
+              Icons.favorite,
+              color: _selectedIndex == 2 ? Colors.red : Colors.grey,
+              size: _selectedIndex == 2 ? 35 : 25,
+            ),
+          ),
+          label: 'Favorites',
+        ),
         BottomNavigationBarItem(
-            icon: Icon(Icons.request_page, color: Colors.orange),
-            label: 'Requests'),
+          icon: Container(
+            decoration: BoxDecoration(
+              color: Colors.orange.shade50,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.orange.withOpacity(0.5),
+                  blurRadius: 8,
+                  offset: Offset(0, 4),
+                ),
+              ],
+            ),
+            padding: EdgeInsets.all(8),
+            child: Icon(
+              Icons.request_page,
+              color: _selectedIndex == 3 ? Colors.orange : Colors.grey,
+              size: _selectedIndex == 3 ? 35 : 25,
+            ),
+          ),
+          label: 'Requests',
+        ),
         BottomNavigationBarItem(
-            icon: Icon(Icons.notifications, color: Colors.red),
-            label: 'Notifications'),
+          icon: Container(
+            decoration: BoxDecoration(
+              color: Colors.red.shade50,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.red.withOpacity(0.5),
+                  blurRadius: 8,
+                  offset: Offset(0, 4),
+                ),
+              ],
+            ),
+            padding: EdgeInsets.all(8),
+            child: Icon(
+              Icons.notifications,
+              color: _selectedIndex == 4 ? Colors.red : Colors.grey,
+              size: _selectedIndex == 4 ? 35 : 25,
+            ),
+          ),
+          label: 'Notifications',
+        ),
       ],
-      onTap: (index) {
-        switch (index) {
-          case 0:
-            break;
-          case 1:
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ChatListScreen(
-                  currentUser: widget.userName,
-                  currentUserImage: widget.profileImageUrl,
-                  currentUserRole: widget.userRole,
-                ),
-              ),
-            );
-            break;
-          case 2:
-            if (widget.userRole == 'student') {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => FavoriteTutorsScreen(
-                    currentUser: widget.userName,
-                    userId: widget.idUser,
-                    currentUserImage: '',
-                  ),
-                ),
-              );
-            } else if (widget.userRole == 'tutor') {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => FavoriteStudentScreen(
-                    currentUser: widget.userName,
-                    userId: widget.idUser,
-                    currentUserImage: '',
-                  ),
-                ),
-              );
-            }
-            break;
-          case 3:
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => StudentRequestsScreen(
-                  userName: widget.userName,
-                  userRole: widget.userRole,
-                ),
-              ),
-            );
-            break;
-          case 4:
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => NotificationScreen(
-                  userName: widget.userName,
-                  userRole: widget.userRole,
-                ),
-              ),
-            );
-            break;
-        }
-      },
+      currentIndex: _selectedIndex,
+      onTap: _onItemTapped,
+      type: BottomNavigationBarType.fixed,
+      selectedFontSize: 20.0,
+      unselectedFontSize: 12.0,
+      backgroundColor:
+          Colors.white, // เพิ่มสีพื้นหลังให้กับ BottomNavigationBar
     );
   }
 }

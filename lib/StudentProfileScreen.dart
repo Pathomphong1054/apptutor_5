@@ -185,7 +185,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Student Profile'),
-        backgroundColor: Colors.blue[800],
+        backgroundColor: const Color.fromARGB(255, 28, 195, 198),
         actions: [
           if (_isEditing)
             IconButton(
@@ -207,49 +207,66 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
           ? Center(child: CircularProgressIndicator())
           : _nameController.text.isEmpty
               ? Center(child: Text('No profile data available'))
-              : SingleChildScrollView(
-                  padding: EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Center(
-                        child: GestureDetector(
-                          onTap: _isEditing
-                              ? () => _pickImage(ImageSource.gallery)
-                              : null,
-                          child: CircleAvatar(
-                            radius: 70,
-                            backgroundImage: _profileImage != null
-                                ? FileImage(_profileImage!)
-                                : (_profileImageUrl != null
-                                    ? NetworkImage(
-                                        'http://10.5.50.82/tutoring_app/uploads/$_profileImageUrl')
-                                    : AssetImage('images/default_profile.jpg')
-                                        as ImageProvider),
-                            child: Align(
-                              alignment: Alignment.bottomRight,
-                              child: Icon(
-                                Icons.camera_alt,
-                                color: _isEditing
-                                    ? Colors.blue[800]
-                                    : Colors.transparent,
-                                size: 30,
+              : Stack(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            const Color.fromARGB(255, 28, 195, 198),
+                            const Color.fromARGB(255, 249, 249, 249),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SingleChildScrollView(
+                      padding: EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Center(
+                            child: GestureDetector(
+                              onTap: _isEditing
+                                  ? () => _pickImage(ImageSource.gallery)
+                                  : null,
+                              child: CircleAvatar(
+                                radius: 70,
+                                backgroundImage: _profileImage != null
+                                    ? FileImage(_profileImage!)
+                                    : (_profileImageUrl != null
+                                        ? NetworkImage(
+                                            'http://10.5.50.82/tutoring_app/uploads/$_profileImageUrl')
+                                        : AssetImage(
+                                                'images/default_profile.jpg')
+                                            as ImageProvider),
+                                child: Align(
+                                  alignment: Alignment.bottomRight,
+                                  child: Icon(
+                                    Icons.camera_alt,
+                                    color: _isEditing
+                                        ? Colors.blue[800]
+                                        : Colors.transparent,
+                                    size: 30,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
-                        ),
+                          SizedBox(height: 20),
+                          _buildProfileFieldWithLabel(
+                              'Name', _nameController, Icons.person),
+                          SizedBox(height: 10),
+                          _buildProfileFieldWithLabel(
+                              'Email', _emailController, Icons.email),
+                          SizedBox(height: 10),
+                          _buildProfileFieldWithLabel('Address',
+                              _addressController, Icons.location_city),
+                        ],
                       ),
-                      SizedBox(height: 20),
-                      _buildProfileFieldWithLabel(
-                          'Name', _nameController, Icons.person),
-                      SizedBox(height: 10),
-                      _buildProfileFieldWithLabel(
-                          'Email', _emailController, Icons.email),
-                      SizedBox(height: 10),
-                      _buildProfileFieldWithLabel(
-                          'Address', _addressController, Icons.location_city),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
     );
   }

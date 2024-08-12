@@ -2,59 +2,53 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class MapScreen extends StatefulWidget {
+  final String tutorName;
+
+  const MapScreen({Key? key, required this.tutorName}) : super(key: key);
+
   @override
   _MapScreenState createState() => _MapScreenState();
 }
 
 class _MapScreenState extends State<MapScreen> {
-  LatLng? _selectedLocation;
+  late GoogleMapController _mapController;
+  final LatLng _initialPosition =
+      LatLng(13.7563, 100.5018); // ตัวอย่างตำแหน่งในกรุงเทพฯ
+  Set<Marker> _markers = {};
 
-  void _onMapCreated(GoogleMapController controller) {}
-
-  void _onTap(LatLng position) {
-    setState(() {
-      _selectedLocation = position;
-    });
+  @override
+  void initState() {
+    super.initState();
+    _setMarker();
   }
 
-  void _onConfirm() {
-    if (_selectedLocation != null) {
-      Navigator.of(context).pop(_selectedLocation);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please select a location on the map')),
+  void _setMarker() {
+    setState(() {
+      _markers.add(
+        Marker(
+          markerId: MarkerId(widget.tutorName),
+          position: _initialPosition,
+          infoWindow: InfoWindow(title: widget.tutorName),
+        ),
       );
-    }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Select Location'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.check),
-            onPressed: _onConfirm,
-          ),
-        ],
+        title: Text('Tutor Location'),
       ),
       body: GoogleMap(
-        onMapCreated: _onMapCreated,
+        onMapCreated: (GoogleMapController controller) {
+          _mapController = controller;
+        },
         initialCameraPosition: CameraPosition(
-          target:
-              LatLng(37.7749, -122.4194), // Starting position (San Francisco)
+          target: _initialPosition,
           zoom: 10,
         ),
-        onTap: _onTap,
-        markers: _selectedLocation != null
-            ? {
-                Marker(
-                  markerId: MarkerId('selectedLocation'),
-                  position: _selectedLocation!,
-                ),
-              }
-            : {},
+        markers: _markers,
       ),
     );
   }

@@ -24,211 +24,254 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Student Registration'),
-      ),
       body: Stack(
         children: [
+          // Gradient Background
           Container(
             decoration: BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage('images/background.jpg'),
-                fit: BoxFit.cover,
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  const Color.fromARGB(255, 28, 195, 198),
+                  const Color.fromARGB(255, 249, 249, 249)
+                ],
               ),
             ),
           ),
           Center(
             child: Padding(
               padding: EdgeInsets.all(16.0),
-              child: Card(
-                elevation: 8,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16.0),
-                ),
-                child: Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: ListView(
-                    children: [
-                      Text(
-                        'Fill in the details to register as a student:',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).primaryColor,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      SizedBox(height: 20),
-                      Center(
-                        child: GestureDetector(
-                          onTap: _pickImage,
-                          child: CircleAvatar(
-                            radius: 60,
-                            backgroundImage: _profileImage != null
-                                ? FileImage(_profileImage!)
-                                : AssetImage('images/default_profile.jpg')
-                                    as ImageProvider,
-                            child: Align(
-                              alignment: Alignment.bottomRight,
-                              child: Icon(
-                                Icons.camera_alt,
-                                color: Colors.blue[800],
-                                size: 30,
-                              ),
-                            ),
+              child: ListView(
+                shrinkWrap: true,
+                children: [
+                  Text(
+                    'Fill in the details to register as a student:',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: const Color.fromARGB(255, 0, 0, 0),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 20),
+                  Center(
+                    child: GestureDetector(
+                      onTap: _pickImage,
+                      child: CircleAvatar(
+                        radius: 60,
+                        backgroundImage: _profileImage != null
+                            ? FileImage(_profileImage!)
+                            : AssetImage('images/default_profile.jpg')
+                                as ImageProvider,
+                        child: Align(
+                          alignment: Alignment.bottomRight,
+                          child: Icon(
+                            Icons.camera_alt,
+                            color: Colors.blue[800],
+                            size: 30,
                           ),
                         ),
                       ),
-                      SizedBox(height: 20),
-                      TextFormField(
-                        controller: _nameController,
-                        decoration: InputDecoration(
-                          labelText: 'Name',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.person),
-                        ),
-                      ),
-                      SizedBox(height: 10),
-                      TextFormField(
-                        controller: _emailController,
-                        decoration: InputDecoration(
-                          labelText: 'Email',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.email),
-                        ),
-                      ),
-                      SizedBox(height: 10),
-                      TextFormField(
-                        controller: _passwordController,
-                        decoration: InputDecoration(
-                          labelText: 'Password',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.lock),
-                        ),
-                        obscureText: true,
-                      ),
-                      SizedBox(height: 10),
-                      TextFormField(
-                        controller: _confirmPasswordController,
-                        decoration: InputDecoration(
-                          labelText: 'Confirm Password',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.lock),
-                        ),
-                        obscureText: true,
-                      ),
-                      SizedBox(height: 10),
-                      DropdownButtonFormField<String>(
-                        value: _selectedProvince,
-                        onChanged: (newValue) {
-                          setState(() {
-                            _selectedProvince = newValue!;
-                          });
-                        },
-                        items: <String>[
-                          'Bangkok',
-                          'Krabi',
-                          'Kanchanaburi',
-                          'Kalasin',
-                          'Kamphaeng Phet',
-                          'Khon Kaen',
-                          'Chanthaburi',
-                          'Chachoengsao',
-                          'Chon Buri',
-                          'Chai Nat',
-                          'Chaiyaphum',
-                          'Chumphon',
-                          'Chiang Mai',
-                          'Chiang Rai',
-                          'Trang',
-                          'Trat',
-                          'Tak',
-                          'Nakhon Nayok',
-                          'Nakhon Pathom',
-                          'Nakhon Phanom',
-                          'Nakhon Ratchasima',
-                          'Nakhon Si Thammarat',
-                          'Nakhon Sawan',
-                          'Nonthaburi',
-                          'Narathiwat',
-                          'Nan',
-                          'Bueng Kan',
-                          'Buriram',
-                          'Pathum Thani',
-                          'Prachuap Khiri Khan',
-                          'Prachinburi',
-                          'Pattani',
-                          'Phra Nakhon Si Ayutthaya',
-                          'Phang Nga',
-                          'Phatthalung',
-                          'Phichit',
-                          'Phitsanulok',
-                          'Phetchaburi',
-                          'Phetchabun',
-                          'Phuket',
-                          'Maha Sarakham',
-                          'Mukdahan',
-                          'Mae Hong Son',
-                          'Yasothon',
-                          'Yala',
-                          'Roi Et',
-                          'Ranong',
-                          'Rayong',
-                          'Lopburi',
-                          'Lampang',
-                          'Lamphun',
-                          'Loei',
-                          'Si Sa Ket',
-                          'Sakon Nakhon',
-                          'Songkhla',
-                          'Satun',
-                          'Samut Prakan',
-                          'Samut Sakhon',
-                          'Samut Songkhram',
-                          'Saraburi',
-                          'Sing Buri',
-                          'Sukhothai',
-                          'Suphan Buri',
-                          'Surat Thani',
-                          'Surin',
-                          'Nong Khai',
-                          'Nong Bua Lamphu',
-                          'Amnat Charoen',
-                          'Udon Thani',
-                          'Uttaradit',
-                          'Uthai Thani',
-                          'Ubon Ratchathani',
-                        ].map<DropdownMenuItem<String>>((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(value),
-                          );
-                        }).toList(),
-                        decoration: InputDecoration(
-                          labelText: 'Province',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.location_city),
-                        ),
-                      ),
-                      SizedBox(height: 20),
-                      Center(
-                        child: _isLoading
-                            ? CircularProgressIndicator()
-                            : ElevatedButton(
-                                onPressed: () => registerStudent(context),
-                                child: Text('Register as Student'),
-                                style: ElevatedButton.styleFrom(
-                                  padding: EdgeInsets.symmetric(
-                                      horizontal: 40, vertical: 15),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(30),
-                                  ),
-                                ),
-                              ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
+                  SizedBox(height: 20),
+                  TextFormField(
+                    controller: _nameController,
+                    decoration: InputDecoration(
+                      labelText: 'Name',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide: BorderSide(
+                          color: Colors.black,
+                          width: 1.0,
+                        ),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.9),
+                      prefixIcon: Icon(Icons.person, color: Colors.grey),
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  TextFormField(
+                    controller: _emailController,
+                    decoration: InputDecoration(
+                      labelText: 'Email',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide: BorderSide(
+                          color: Colors.black,
+                          width: 1.0,
+                        ),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.9),
+                      prefixIcon: Icon(Icons.email, color: Colors.grey),
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  TextFormField(
+                    controller: _passwordController,
+                    decoration: InputDecoration(
+                      labelText: 'Password',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide: BorderSide(
+                          color: Colors.black,
+                          width: 1.0,
+                        ),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.9),
+                      prefixIcon: Icon(Icons.lock, color: Colors.grey),
+                    ),
+                    obscureText: true,
+                  ),
+                  SizedBox(height: 10),
+                  TextFormField(
+                    controller: _confirmPasswordController,
+                    decoration: InputDecoration(
+                      labelText: 'Confirm Password',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide: BorderSide(
+                          color: Colors.black,
+                          width: 1.0,
+                        ),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.9),
+                      prefixIcon: Icon(Icons.lock, color: Colors.grey),
+                    ),
+                    obscureText: true,
+                  ),
+                  SizedBox(height: 10),
+                  DropdownButtonFormField<String>(
+                    value: _selectedProvince,
+                    onChanged: (newValue) {
+                      setState(() {
+                        _selectedProvince = newValue!;
+                      });
+                    },
+                    items: <String>[
+                      'Bangkok',
+                      'Krabi',
+                      'Kanchanaburi',
+                      'Kalasin',
+                      'Kamphaeng Phet',
+                      'Khon Kaen',
+                      'Chanthaburi',
+                      'Chachoengsao',
+                      'Chon Buri',
+                      'Chai Nat',
+                      'Chaiyaphum',
+                      'Chumphon',
+                      'Chiang Mai',
+                      'Chiang Rai',
+                      'Trang',
+                      'Trat',
+                      'Tak',
+                      'Nakhon Nayok',
+                      'Nakhon Pathom',
+                      'Nakhon Phanom',
+                      'Nakhon Ratchasima',
+                      'Nakhon Si Thammarat',
+                      'Nakhon Sawan',
+                      'Nonthaburi',
+                      'Narathiwat',
+                      'Nan',
+                      'Bueng Kan',
+                      'Buriram',
+                      'Pathum Thani',
+                      'Prachuap Khiri Khan',
+                      'Prachinburi',
+                      'Pattani',
+                      'Phra Nakhon Si Ayutthaya',
+                      'Phang Nga',
+                      'Phatthalung',
+                      'Phichit',
+                      'Phitsanulok',
+                      'Phetchaburi',
+                      'Phetchabun',
+                      'Phuket',
+                      'Maha Sarakham',
+                      'Mukdahan',
+                      'Mae Hong Son',
+                      'Yasothon',
+                      'Yala',
+                      'Roi Et',
+                      'Ranong',
+                      'Rayong',
+                      'Lopburi',
+                      'Lampang',
+                      'Lamphun',
+                      'Loei',
+                      'Si Sa Ket',
+                      'Sakon Nakhon',
+                      'Songkhla',
+                      'Satun',
+                      'Samut Prakan',
+                      'Samut Sakhon',
+                      'Samut Songkhram',
+                      'Saraburi',
+                      'Sing Buri',
+                      'Sukhothai',
+                      'Suphan Buri',
+                      'Surat Thani',
+                      'Surin',
+                      'Nong Khai',
+                      'Nong Bua Lamphu',
+                      'Amnat Charoen',
+                      'Udon Thani',
+                      'Uttaradit',
+                      'Uthai Thani',
+                      'Ubon Ratchathani',
+                    ].map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                    decoration: InputDecoration(
+                      labelText: 'Province',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide: BorderSide(
+                          color: Colors.black,
+                          width: 1.0,
+                        ),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.9),
+                      prefixIcon: Icon(Icons.location_city, color: Colors.grey),
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  Center(
+                    child: _isLoading
+                        ? CircularProgressIndicator()
+                        : ElevatedButton(
+                            onPressed: () => registerStudent(context),
+                            style: ElevatedButton.styleFrom(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 40, vertical: 15),
+                              backgroundColor:
+                                  const Color.fromARGB(255, 5, 162, 186),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
+                                side: BorderSide(color: Colors.black, width: 1),
+                              ),
+                            ),
+                            child: Text(
+                              'Register as Student',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -294,7 +337,6 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
 
     if (response.statusCode == 200) {
       var responseData = await response.stream.bytesToString();
-      print('Response data: $responseData');
       var data = json.decode(responseData);
 
       if (data['status'] == 'success') {
@@ -312,6 +354,7 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
                   'http://10.5.50.82/tutoring_app/uploads/$profileImageUrl',
               currentUserRole: 'student',
               idUser: '',
+              tutorName: '',
             ),
           ),
         );

@@ -9,12 +9,14 @@ class TutoringScheduleScreen extends StatefulWidget {
   final String tutorImage;
   final String currentUser;
   final String currentUserImage;
+  final String idUser;
 
   TutoringScheduleScreen({
     required this.tutorName,
     required this.tutorImage,
     required this.currentUser,
     required this.currentUserImage,
+    required this.idUser,
   });
 
   @override
@@ -30,6 +32,7 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
   TextEditingController startTimeController = TextEditingController();
   TextEditingController endTimeController = TextEditingController();
   double hourlyRate = 100.0;
+  String tutorId = '';
 
   List<Map<String, dynamic>> rates = [];
 
@@ -160,8 +163,6 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
         }),
       );
 
-      print('Schedule Session Response: ${response.body}');
-
       if (response.statusCode == 200) {
         try {
           final responseData = json.decode(response.body);
@@ -169,8 +170,8 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text('Session scheduled successfully')),
             );
-            await _sendMessageToTutor(responseData['session_id']
-                .toString()); // Send message to tutor with session_id
+
+            await _sendMessageToTutor(responseData['session_id'].toString());
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -201,8 +202,8 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
         rates.firstWhere((rate) => rate['people'] == selectedRate)['price'];
     final message =
         '''A new tutoring session has been scheduled with you on ${selectedDay.toString()}
-  from ${startTime!.format(context)} to ${endTime!.format(context)}.
-  The rate is $selectedRate people at ${price.toStringAsFixed(2)} THB.''';
+    from ${startTime!.format(context)} to ${endTime!.format(context)}.
+    The rate is $selectedRate people at ${price.toStringAsFixed(2)} THB.''';
 
     final payload = json.encode({
       'sender': widget.currentUser,
@@ -211,15 +212,11 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
       'session_id': sessionId,
     });
 
-    print('Sending message payload: $payload');
-
     final response = await http.post(
       Uri.parse('http://10.5.50.82/tutoring_app/send_message.php'),
       headers: {'Content-Type': 'application/json'},
       body: payload,
     );
-
-    print('Send Message Response: ${response.body}');
 
     if (response.statusCode == 200) {
       try {
@@ -238,7 +235,10 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
                 recipientImage: widget.tutorImage,
                 currentUserImage: widget.currentUserImage,
                 sessionId: sessionId,
-                currentUserRole: 'student', // Pass currentUserRole as 'student'
+                currentUserRole: 'student',
+                idUser: widget.idUser,
+                userId: widget.idUser,
+                tutorId: tutorId, // Pass currentUserRole as 'student'
               ),
             ),
           );
@@ -266,14 +266,18 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Tutoring Schedule'),
-        backgroundColor: Colors.blue[800],
+        backgroundColor: const Color.fromARGB(255, 28, 195, 198),
+        elevation: 0,
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Tutor: ${widget.tutorName}'),
+            Text(
+              'Tutor: ${widget.tutorName}',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
             SizedBox(height: 20),
             TableCalendar(
               calendarFormat: _calendarFormat,
@@ -299,92 +303,54 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
               onPageChanged: (focusedDay) {
                 _focusedDay = focusedDay;
               },
-              calendarBuilders: CalendarBuilders(
-                defaultBuilder: (context, day, focusedDay) {
-                  if (_isDayScheduled(day)) {
-                    return Container(
-                      margin: const EdgeInsets.all(6.0),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          '${day.day}',
-                          style: TextStyle().copyWith(color: Colors.white),
-                        ),
-                      ),
-                    );
-                  }
-                  return null;
-                },
+              calendarStyle: CalendarStyle(
+                todayDecoration: BoxDecoration(
+                  color: Colors.blueAccent.withOpacity(0.5),
+                  shape: BoxShape.circle,
+                ),
+                selectedDecoration: BoxDecoration(
+                  color: Colors.blueAccent,
+                  shape: BoxShape.circle,
+                ),
+                markersMaxCount: 1,
+                markerDecoration: BoxDecoration(
+                  color: Colors.redAccent,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              headerStyle: HeaderStyle(
+                titleTextStyle: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blueAccent),
+                formatButtonVisible: false,
+                titleCentered: true,
               ),
             ),
             SizedBox(height: 20),
-            Row(
-              children: [
-                Text('Start Time: '),
-                Expanded(
-                  child: TextField(
-                    controller: startTimeController,
-                    readOnly: true,
-                    onTap: () {
-                      _selectTime(context, true);
-                    },
-                    decoration: InputDecoration(
-                      hintText: 'Select Start Time',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+            _buildTimePickerRow('Start Time:', startTimeController, true),
             SizedBox(height: 10),
-            Row(
-              children: [
-                Text('End Time: '),
-                Expanded(
-                  child: TextField(
-                    controller: endTimeController,
-                    readOnly: true,
-                    onTap: () {
-                      _selectTime(context, false);
-                    },
-                    decoration: InputDecoration(
-                      hintText: 'Select End Time',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+            _buildTimePickerRow('End Time:', endTimeController, false),
             SizedBox(height: 10),
-            Text('Level of Education'),
-            DropdownButton<String>(
-              value: selectedLevel,
-              onChanged: (String? newValue) {
-                setState(() {
-                  selectedLevel = newValue!;
-                  _updateRates();
-                });
-              },
-              items: <String>[
-                'ประถม1-3',
-                'ประถม4-6',
-                'มัธยม1-3',
-                'มัธยม4-6',
-                'ปวช',
-                'ปวส',
-                'ป.ตรี',
-              ].map<DropdownMenuItem<String>>((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-            ),
+            _buildDropdown('Level of Education', selectedLevel, <String>[
+              'ประถม1-3',
+              'ประถม4-6',
+              'มัธยม1-3',
+              'มัธยม4-6',
+              'ปวช',
+              'ปวส',
+              'ป.ตรี'
+            ], (String? newValue) {
+              setState(() {
+                selectedLevel = newValue!;
+                _updateRates();
+              });
+            }),
             SizedBox(height: 10),
-            Text('Price rate'),
+            Text(
+              'Price rate',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
             ListView.builder(
               shrinkWrap: true,
               physics: NeverScrollableScrollPhysics(),
@@ -408,15 +374,85 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
               child: ElevatedButton(
                 onPressed: _scheduleSession,
                 style: ButtonStyle(
-                  backgroundColor:
-                      MaterialStateProperty.all<Color>(Colors.blue),
+                  backgroundColor: MaterialStateProperty.all<Color>(
+                    const Color.fromARGB(255, 28, 195, 198),
+                  ),
+                  padding: MaterialStateProperty.all<EdgeInsets>(
+                    EdgeInsets.symmetric(vertical: 15.0, horizontal: 50.0),
+                  ),
                 ),
-                child: Text('Schedule'),
+                child: Text(
+                  'Schedule',
+                  style: TextStyle(fontSize: 18, color: Colors.white),
+                ),
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildTimePickerRow(
+      String label, TextEditingController controller, bool isStartTime) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+        ),
+        Expanded(
+          flex: 2,
+          child: TextField(
+            controller: controller,
+            readOnly: true,
+            onTap: () {
+              _selectTime(context, isStartTime);
+            },
+            decoration: InputDecoration(
+              hintText: 'Select Time',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              contentPadding:
+                  EdgeInsets.symmetric(vertical: 12.0, horizontal: 10.0),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDropdown(String label, String value, List<String> items,
+      void Function(String?)? onChanged) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        SizedBox(height: 5),
+        DropdownButtonFormField<String>(
+          value: value,
+          decoration: InputDecoration(
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            contentPadding:
+                EdgeInsets.symmetric(vertical: 12.0, horizontal: 10.0),
+          ),
+          onChanged: onChanged,
+          items: items.map<DropdownMenuItem<String>>((String value) {
+            return DropdownMenuItem<String>(
+              value: value,
+              child: Text(value),
+            );
+          }).toList(),
+        ),
+      ],
     );
   }
 }
