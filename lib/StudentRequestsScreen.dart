@@ -81,6 +81,12 @@ class _StudentRequestsScreenState extends State<StudentRequestsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Request responded successfully')),
         );
+
+        // ลบโพสต์ออกจากฐานข้อมูล
+        if (isAccepted) {
+          await _deletePostByUserName(tutorName);
+        }
+
         if (isAccepted && responseData['sessionId'] != null) {
           _navigateToChatScreen(
               tutorName, tutorProfileImage, responseData['sessionId']);
@@ -108,6 +114,20 @@ class _StudentRequestsScreenState extends State<StudentRequestsScreen> {
 
     if (response.statusCode != 200) {
       _showErrorSnackBar('Failed to delete request from database');
+    }
+  }
+
+  Future<void> _deletePostByUserName(String userName) async {
+    var response = await http.post(
+      Uri.parse('http://10.5.50.82/tutoring_app/delete_post_by_username.php'),
+      body: json.encode({
+        'user_name': userName,
+      }),
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    if (response.statusCode != 200) {
+      _showErrorSnackBar('Failed to delete post from database');
     }
   }
 

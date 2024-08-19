@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ChatScreen extends StatefulWidget {
   final String currentUser;
@@ -24,8 +26,8 @@ class ChatScreen extends StatefulWidget {
     required this.sessionId,
     required this.currentUserRole,
     required this.idUser,
-    required userId,
-    required tutorId,
+    required String userId,
+    required String tutorId,
   });
 
   @override
@@ -158,6 +160,54 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  Future<void> _sendMessageWithLocation(LatLng position) async {
+    final message =
+        'Location: Lat: ${position.latitude}, Lng: ${position.longitude}';
+    final response = await http.post(
+      Uri.parse('http://10.5.50.82/tutoring_app/send_message.php'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({
+        'sender': widget.currentUser,
+        'recipient': widget.recipient,
+        'message': message,
+        'latitude': position.latitude.toString(),
+        'longitude': position.longitude.toString(),
+        'session_id': widget.sessionId,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final responseData = json.decode(response.body);
+      if (responseData['status'] == 'success') {
+        setState(() {
+          _messages.add({
+            'sender': widget.currentUser,
+            'recipient': widget.recipient,
+            'message': message,
+            'latitude': position.latitude.toString(),
+            'longitude': position.longitude.toString(),
+            'session_id': widget.sessionId,
+          });
+          _allMessages[widget.sessionId] = _messages;
+        });
+        _scrollToBottom();
+
+        await createNotification(
+            widget.currentUser, widget.recipient, message, 'location');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content:
+                  Text('Failed to send location: ${responseData['message']}')),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to send location')),
+      );
+    }
+  }
+
   Future<void> _sendImage(File image) async {
     var request = http.MultipartRequest(
       'POST',
@@ -231,6 +281,7 @@ class _ChatScreenState extends State<ChatScreen> {
           } else {
             return TutorProfileScreen(
               userName: widget.recipient,
+              canEdit: false,
               userRole: 'Tutor',
               currentUser: widget.currentUser,
               currentUserImage: widget.currentUserImage,
@@ -246,8 +297,18 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  void _viewMap() {
-    Navigator.push(
+  void _openMap(LatLng position) async {
+    final googleMapsUrl =
+        'https://www.google.com/maps/dir/?api=1&destination=${position.latitude},${position.longitude}';
+    if (await canLaunch(googleMapsUrl)) {
+      await launch(googleMapsUrl);
+    } else {
+      throw 'Could not open the map.';
+    }
+  }
+
+  void _viewMap() async {
+    LatLng? selectedPosition = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => MapScreen(
@@ -255,6 +316,10 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
       ),
     );
+
+    if (selectedPosition != null) {
+      _sendMessageWithLocation(selectedPosition);
+    }
   }
 
   @override
@@ -278,8 +343,7 @@ class _ChatScreenState extends State<ChatScreen> {
           Container(
             decoration: BoxDecoration(
               image: DecorationImage(
-                image: AssetImage(
-                    "images/chat_background.jpg"), // เปลี่ยนภาพพื้นหลังให้เหมาะสม
+                image: AssetImage("images/chat_background.jpg"),
                 fit: BoxFit.cover,
               ),
             ),
@@ -287,105 +351,161 @@ class _ChatScreenState extends State<ChatScreen> {
           Column(
             children: [
               Expanded(
-                child: _isLoading
-                    ? Center(child: CircularProgressIndicator())
-                    : _errorMessage != null
-                        ? Center(child: Text(_errorMessage!))
-                        : ListView.builder(
-                            controller: _scrollController,
-                            itemCount: _messages.length,
-                            itemBuilder: (context, index) {
-                              final message = _messages[index];
-                              bool isCurrentUser =
-                                  message['sender'] == widget.currentUser;
+                  child: _isLoading
+                      ? Center(child: CircularProgressIndicator())
+                      : _errorMessage != null
+                          ? Center(child: Text(_errorMessage!))
+                          : ListView.builder(
+                              controller: _scrollController,
+                              itemCount: _messages.length,
+                              itemBuilder: (context, index) {
+                                final message = _messages[index];
+                                bool isCurrentUser =
+                                    message['sender'] == widget.currentUser;
+                                LatLng? location;
 
-                              return Container(
-                                margin: EdgeInsets.symmetric(
-                                    vertical: 5, horizontal: 10),
-                                child: Row(
-                                  mainAxisAlignment: isCurrentUser
-                                      ? MainAxisAlignment.end
-                                      : MainAxisAlignment.start,
-                                  children: [
-                                    if (!isCurrentUser)
-                                      CircleAvatar(
-                                        backgroundImage:
-                                            NetworkImage(widget.recipientImage),
-                                        radius: 20,
-                                      ),
-                                    if (!isCurrentUser) SizedBox(width: 10),
-                                    Container(
-                                      padding: EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: isCurrentUser
-                                            ? const Color.fromARGB(
-                                                255, 94, 202, 241)
-                                            : Colors.white.withOpacity(0.9),
-                                        borderRadius: BorderRadius.only(
-                                          topLeft: Radius.circular(20),
-                                          topRight: Radius.circular(20),
-                                          bottomLeft: isCurrentUser
-                                              ? Radius.circular(20)
-                                              : Radius.circular(0),
-                                          bottomRight: isCurrentUser
-                                              ? Radius.circular(0)
-                                              : Radius.circular(20),
+                                // ตรวจสอบว่าข้อความนั้นควรจะแสดงเป็นแผนที่หรือไม่
+                                if (message['latitude'] != null &&
+                                    message['longitude'] != null) {
+                                  try {
+                                    // ตรวจสอบว่า message มีการระบุว่าเป็นตำแหน่งหรือไม่ (เช่น ข้อความระบุว่าเป็น "Location:")
+                                    if (message['message'] != null &&
+                                        message['message']
+                                            .startsWith('Location:')) {
+                                      location = LatLng(
+                                        double.parse(message['latitude']),
+                                        double.parse(message['longitude']),
+                                      );
+                                    }
+                                  } catch (e) {
+                                    print(
+                                        'Error parsing latitude or longitude: $e');
+                                    location = null;
+                                  }
+                                }
+
+                                return Container(
+                                  margin: EdgeInsets.symmetric(
+                                      vertical: 5, horizontal: 10),
+                                  child: Row(
+                                    mainAxisAlignment: isCurrentUser
+                                        ? MainAxisAlignment.end
+                                        : MainAxisAlignment.start,
+                                    children: [
+                                      if (!isCurrentUser)
+                                        CircleAvatar(
+                                          backgroundImage: widget
+                                                  .recipientImage.isNotEmpty
+                                              ? NetworkImage(
+                                                  widget.recipientImage)
+                                              : AssetImage(
+                                                      'images/default_profile.jpg')
+                                                  as ImageProvider,
+                                          radius: 20,
+                                          backgroundColor: Colors.grey[300],
                                         ),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black12,
-                                            offset: Offset(0, 2),
-                                            blurRadius: 4.0,
-                                          ),
-                                        ],
-                                      ),
-                                      constraints: BoxConstraints(
-                                        maxWidth:
-                                            MediaQuery.of(context).size.width *
-                                                0.7,
-                                      ),
-                                      child: message['image_url'] != null &&
-                                              message['image_url']!.isNotEmpty
-                                          ? Image.network(
-                                              message['image_url']!,
-                                              errorBuilder:
-                                                  (context, error, stackTrace) {
-                                                return Text(
-                                                  'Image failed to load',
-                                                  style: TextStyle(
-                                                      color: Colors.red),
-                                                );
-                                              },
-                                            )
-                                          : Text(
-                                              message['message'] ?? '',
-                                              style: TextStyle(
-                                                fontSize: 16,
-                                                color: isCurrentUser
-                                                    ? Colors.black87
-                                                    : Colors.black54,
+                                      if (!isCurrentUser) SizedBox(width: 10),
+                                      if (location != null)
+                                        GestureDetector(
+                                          onTap: () => _openMap(location!),
+                                          child: Container(
+                                            width: 150,
+                                            height: 150,
+                                            child: GoogleMap(
+                                              initialCameraPosition:
+                                                  CameraPosition(
+                                                target: location!,
+                                                zoom: 14.0,
                                               ),
+                                              markers: {
+                                                Marker(
+                                                  markerId:
+                                                      MarkerId('selected'),
+                                                  position: location!,
+                                                ),
+                                              },
+                                              zoomControlsEnabled: false,
+                                              scrollGesturesEnabled: false,
+                                              rotateGesturesEnabled: false,
+                                              tiltGesturesEnabled: false,
+                                              mapType: MapType.normal,
                                             ),
-                                    ),
-                                    if (isCurrentUser) SizedBox(width: 10),
-                                    if (isCurrentUser)
-                                      CircleAvatar(
-                                        backgroundImage: widget
-                                                .currentUserImage.isNotEmpty
-                                            ? NetworkImage(
-                                                widget.currentUserImage)
-                                            : AssetImage(
-                                                    'images/default_profile.jpg')
-                                                as ImageProvider,
-                                        radius: 20,
-                                        backgroundColor: Colors.grey[300],
-                                      ),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-              ),
+                                          ),
+                                        ),
+                                      if (location == null)
+                                        Container(
+                                          padding: EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            color: isCurrentUser
+                                                ? const Color.fromARGB(
+                                                    255, 94, 202, 241)
+                                                : Colors.white.withOpacity(0.9),
+                                            borderRadius: BorderRadius.only(
+                                              topLeft: Radius.circular(20),
+                                              topRight: Radius.circular(20),
+                                              bottomLeft: isCurrentUser
+                                                  ? Radius.circular(20)
+                                                  : Radius.circular(0),
+                                              bottomRight: isCurrentUser
+                                                  ? Radius.circular(0)
+                                                  : Radius.circular(20),
+                                            ),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.black12,
+                                                offset: Offset(0, 2),
+                                                blurRadius: 4.0,
+                                              ),
+                                            ],
+                                          ),
+                                          constraints: BoxConstraints(
+                                            maxWidth: MediaQuery.of(context)
+                                                    .size
+                                                    .width *
+                                                0.7,
+                                          ),
+                                          child: message['image_url'] != null &&
+                                                  message['image_url']!
+                                                      .isNotEmpty
+                                              ? Image.network(
+                                                  message['image_url']!,
+                                                  errorBuilder: (context, error,
+                                                      stackTrace) {
+                                                    return Text(
+                                                      'Image failed to load',
+                                                      style: TextStyle(
+                                                          color: Colors.red),
+                                                    );
+                                                  },
+                                                )
+                                              : Text(
+                                                  message['message'] ?? '',
+                                                  style: TextStyle(
+                                                    fontSize: 16,
+                                                    color: isCurrentUser
+                                                        ? Colors.black87
+                                                        : Colors.black54,
+                                                  ),
+                                                ),
+                                        ),
+                                      if (isCurrentUser) SizedBox(width: 10),
+                                      if (isCurrentUser)
+                                        CircleAvatar(
+                                          backgroundImage: widget
+                                                  .currentUserImage.isNotEmpty
+                                              ? NetworkImage(
+                                                  widget.currentUserImage)
+                                              : AssetImage(
+                                                      'images/default_profile.jpg')
+                                                  as ImageProvider,
+                                          radius: 20,
+                                          backgroundColor: Colors.grey[300],
+                                        ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            )),
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Row(

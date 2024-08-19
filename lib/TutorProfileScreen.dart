@@ -3,6 +3,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
+import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:apptutor_2/LocationPickerScreen.dart';
 import 'package:apptutor_2/TutoringScheduleScreen.dart';
 
 class TutorProfileScreen extends StatefulWidget {
@@ -45,7 +48,10 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
   TextEditingController _topicController = TextEditingController();
   TextEditingController _emailController = TextEditingController();
   TextEditingController _addressController = TextEditingController();
+  TextEditingController _latitudeController = TextEditingController();
+  TextEditingController _longitudeController = TextEditingController();
   TextEditingController _commentController = TextEditingController();
+
   String? _profileImageUrl;
   String? _resumeImageUrl;
   bool _isEditing = false;
@@ -53,6 +59,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
   bool isFavorite = false;
   List<Map<String, dynamic>> _reviews = [];
   int _rating = 0;
+  double? _distanceInKm;
 
   @override
   void initState() {
@@ -60,18 +67,95 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
     _fetchProfileData();
     _fetchReviews();
     _checkIfFavorite();
+    _calculateAndSetDistance();
   }
 
-  @override
-  void didUpdateWidget(covariant TutorProfileScreen oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // Refetch data when the widget is updated
-    _fetchProfileData();
-    _fetchReviews();
-    _checkIfFavorite();
+  Future<void> _calculateAndSetDistance() async {
+    try {
+      // Parse and validate tutor coordinates
+      double tutorLatitude =
+          double.tryParse(_latitudeController.text) ?? double.nan;
+      double tutorLongitude =
+          double.tryParse(_longitudeController.text) ?? double.nan;
+
+      if (tutorLatitude.isNaN ||
+          tutorLongitude.isNaN ||
+          tutorLatitude < -90 ||
+          tutorLatitude > 90 ||
+          tutorLongitude < -180 ||
+          tutorLongitude > 180) {
+        print("Invalid tutor coordinates detected.");
+        if (mounted) {
+          setState(() {
+            _distanceInKm = null; // or some default value indicating error
+          });
+        }
+        return;
+      }
+
+      // Get the current position of the student
+      Position studentPosition = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high);
+
+      // Calculate distance in meters
+      double distanceInMeters = Geolocator.distanceBetween(
+        tutorLatitude,
+        tutorLongitude,
+        studentPosition.latitude,
+        studentPosition.longitude,
+      );
+
+      // Set the distance in kilometers
+      if (mounted) {
+        setState(() {
+          _distanceInKm = distanceInMeters / 1000; // Convert to kilometers
+        });
+      }
+
+      print("Distance: $_distanceInKm km");
+    } catch (e) {
+      print("Error calculating distance: $e");
+      if (mounted) {
+        setState(() {
+          _distanceInKm = null; // or some default value indicating error
+        });
+      }
+    }
+  }
+
+  Future<void> _openMapPicker() async {
+    LatLng initialLocation = LatLng(
+      double.parse(_latitudeController.text.isNotEmpty
+          ? _latitudeController.text
+          : '13.7563'),
+      double.parse(_longitudeController.text.isNotEmpty
+          ? _longitudeController.text
+          : '100.5018'),
+    );
+
+    LatLng? pickedLocation = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LocationPickerScreen(
+          initialLocation: initialLocation,
+        ),
+      ),
+    );
+
+    if (pickedLocation != null) {
+      if (mounted) {
+        setState(() {
+          _latitudeController.text = pickedLocation.latitude.toString();
+          _longitudeController.text = pickedLocation.longitude.toString();
+        });
+      }
+      _calculateAndSetDistance();
+    }
   }
 
   Future<void> _fetchProfileData() async {
+    if (!mounted) return;
+
     setState(() {
       isLoading = true;
     });
@@ -86,37 +170,50 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
         final profileData = json.decode(response.body);
 
         if (profileData['status'] == 'success') {
-          setState(() {
-            _nameController.text = profileData['name'] ?? '';
-            _categoryController.text = profileData['category'] ?? '';
-            _subjectController.text = profileData['subject'] ?? '';
-            _topicController.text = profileData['topic'] ?? '';
-            _emailController.text = profileData['email'] ?? '';
-            _addressController.text = profileData['address'] ?? '';
-            _educationLevelController.text =
-                profileData['education_level'] ?? '';
-            _profileImageUrl = profileData['profile_image'];
-            _resumeImageUrl = profileData['resume_image'];
-            isLoading = false;
-          });
+          if (mounted) {
+            setState(() {
+              _nameController.text = profileData['name'] ?? '';
+              _categoryController.text = profileData['category'] ?? '';
+              _subjectController.text = profileData['subject'] ?? '';
+              _topicController.text = profileData['topic'] ?? '';
+              _emailController.text = profileData['email'] ?? '';
+              _addressController.text = profileData['address'] ?? '';
+              _educationLevelController.text =
+                  profileData['education_level'] ?? '';
+              _latitudeController.text =
+                  (profileData['latitude']?.toString() ?? '');
+              _longitudeController.text =
+                  (profileData['longitude']?.toString() ?? '');
+              _profileImageUrl = profileData['profile_image'];
+              _resumeImageUrl = profileData['resume_image'];
+              _calculateAndSetDistance();
+              isLoading = false;
+            });
+          }
         } else {
           _showSnackBar(
               'Failed to load profile data: ${profileData['message']}');
+          if (mounted) {
+            setState(() {
+              isLoading = false;
+            });
+          }
+        }
+      } else {
+        _showSnackBar('Failed to load profile data');
+        if (mounted) {
           setState(() {
             isLoading = false;
           });
         }
-      } else {
-        _showSnackBar('Failed to load profile data');
+      }
+    } catch (e) {
+      _showSnackBar('Error: $e');
+      if (mounted) {
         setState(() {
           isLoading = false;
         });
       }
-    } catch (e) {
-      _showSnackBar('Error: $e');
-      setState(() {
-        isLoading = false;
-      });
     }
   }
 
@@ -128,9 +225,12 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         if (responseData['status'] == 'success') {
-          setState(() {
-            _reviews = List<Map<String, dynamic>>.from(responseData['reviews']);
-          });
+          if (mounted) {
+            setState(() {
+              _reviews =
+                  List<Map<String, dynamic>>.from(responseData['reviews']);
+            });
+          }
         } else {
           _showSnackBar('Failed to load reviews: ${responseData['message']}');
         }
@@ -160,9 +260,11 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['status'] == 'success') {
-          setState(() {
-            isFavorite = data['is_favorite'];
-          });
+          if (mounted) {
+            setState(() {
+              isFavorite = data['is_favorite'];
+            });
+          }
         } else {
           _showSnackBar('Failed to load favorite status: ${data['message']}');
         }
@@ -195,9 +297,11 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['status'] == 'success') {
-          setState(() {
-            isFavorite = !isFavorite;
-          });
+          if (mounted) {
+            setState(() {
+              isFavorite = !isFavorite;
+            });
+          }
           _showSnackBar('Favorite status updated successfully');
         } else {
           _showSnackBar('Failed to update favorite status: ${data['message']}');
@@ -222,9 +326,11 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
   Future<void> _pickImage(ImageSource source) async {
     final pickedFile = await ImagePicker().pickImage(source: source);
     if (pickedFile != null) {
-      setState(() {
-        _profileImage = File(pickedFile.path);
-      });
+      if (mounted) {
+        setState(() {
+          _profileImage = File(pickedFile.path);
+        });
+      }
       await _uploadProfileImage(_profileImage!);
     }
   }
@@ -249,9 +355,11 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
         var jsonData = json.decode(responseBody);
         if (jsonData['status'] == "success") {
           String? imageUrl = jsonData['image_url'];
-          setState(() {
-            _profileImageUrl = imageUrl;
-          });
+          if (mounted) {
+            setState(() {
+              _profileImageUrl = imageUrl;
+            });
+          }
           _showSnackBar('Profile image uploaded successfully');
           widget.onProfileUpdated?.call();
         } else {
@@ -271,9 +379,11 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
     final pickedFile =
         await ImagePicker().pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
-      setState(() {
-        _resumeFile = File(pickedFile.path);
-      });
+      if (mounted) {
+        setState(() {
+          _resumeFile = File(pickedFile.path);
+        });
+      }
       await _uploadResume(_resumeFile!);
     }
   }
@@ -297,9 +407,11 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
         var jsonData = json.decode(responseBody);
         if (jsonData['status'] == "success") {
           String? resumeUrl = jsonData['resume_url'];
-          setState(() {
-            _resumeImageUrl = resumeUrl;
-          });
+          if (mounted) {
+            setState(() {
+              _resumeImageUrl = resumeUrl;
+            });
+          }
           _showSnackBar('Resume uploaded successfully');
         } else {
           _showSnackBar('Failed to upload resume: ${jsonData['message']}');
@@ -323,58 +435,40 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
       return;
     }
 
-    final newName = _nameController.text;
-    final category = _categoryController.text;
-    final subject = _subjectController.text;
-    final topic = _topicController.text;
-    final email = _emailController.text;
-    final address = _addressController.text;
-
-    try {
-      var request = http.MultipartRequest(
-        'POST',
-        Uri.parse('http://10.5.50.82/tutoring_app/update_tutor_profile.php'),
-      );
-
-      if (_profileImage != null) {
-        request.files.add(
-          await http.MultipartFile.fromPath(
-            'profile_images',
-            _profileImage!.path,
-          ),
+    if (_profileImage != null) {
+      await _uploadProfileImage(_profileImage!);
+    } else {
+      try {
+        var response = await http.post(
+          Uri.parse('http://10.5.50.82/tutoring_app/update_tutor_profile.php'),
+          body: {
+            'username': widget.userName,
+            'name': _nameController.text,
+            'category': _categoryController.text,
+            'subject': _subjectController.text,
+            'topic': _topicController.text,
+            'email': _emailController.text,
+            'address': _addressController.text,
+            'latitude': _latitudeController.text,
+            'longitude': _longitudeController.text,
+          },
         );
-      }
 
-      request.fields['username'] = widget.userName;
-      request.fields['name'] = newName;
-      request.fields['category'] = category;
-      request.fields['subject'] = subject;
-      request.fields['topic'] = topic;
-      request.fields['email'] = email;
-      request.fields['address'] = address;
-
-      var response = await request.send();
-      if (response.statusCode == 200) {
-        var responseBody = await response.stream.bytesToString();
-        var jsonData = json.decode(responseBody);
+        var jsonData = json.decode(response.body);
         if (jsonData['status'] == 'success') {
-          setState(() {
-            _profileImageUrl = jsonData['image_url'];
-            _isEditing = false;
-          });
-          widget.onProfileUpdated?.call();
           _showSnackBar('Profile updated successfully');
-
-          // รีเฟรชข้อมูลโปรไฟล์หลังจากอัปเดตสำเร็จ
-          _fetchProfileData();
+          widget.onProfileUpdated?.call();
+          if (mounted) {
+            setState(() {
+              _isEditing = false;
+            });
+          }
         } else {
           _showSnackBar('Failed to update profile: ${jsonData['message']}');
         }
-      } else {
-        _showSnackBar('Failed to update profile');
+      } catch (e) {
+        _showSnackBar('Error updating profile: $e');
       }
-    } catch (e) {
-      _showSnackBar('Error updating profile: $e');
     }
   }
 
@@ -403,9 +497,11 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
           _showSnackBar('Review added successfully');
           _fetchReviews();
           _commentController.clear();
-          setState(() {
-            _rating = 0;
-          });
+          if (mounted) {
+            setState(() {
+              _rating = 0;
+            });
+          }
         } else {
           _showSnackBar('Failed to add review: ${responseData['message']}');
         }
@@ -431,9 +527,11 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                     if (_isEditing) {
                       _updateProfile();
                     } else {
-                      setState(() {
-                        _isEditing = true;
-                      });
+                      if (mounted) {
+                        setState(() {
+                          _isEditing = true;
+                        });
+                      }
                     }
                   },
                 ),
@@ -492,6 +590,18 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                             ),
                           ),
                           SizedBox(height: 20),
+                          _distanceInKm != null
+                              ? Center(
+                                  child: Text(
+                                    'Distance from you: ${_distanceInKm!.toStringAsFixed(2)} km',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                )
+                              : Container(),
+                          SizedBox(height: 20),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
@@ -533,26 +643,27 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                             ],
                           ),
                           SizedBox(height: 20),
+                          _buildProfileFieldWithLabel('Name', _nameController),
+                          SizedBox(height: 10),
                           _buildProfileFieldWithLabel(
-                              'Name', _nameController, Icons.person),
-                          SizedBox(height: 5),
+                              'Category', _categoryController),
+                          SizedBox(height: 10),
                           _buildProfileFieldWithLabel(
-                              'Category', _categoryController, Icons.category),
-                          SizedBox(height: 5),
+                              'Subject', _subjectController),
+                          SizedBox(height: 10),
                           _buildProfileFieldWithLabel(
-                              'Subject', _subjectController, Icons.book),
-                          SizedBox(height: 5),
+                              'Topic', _topicController),
+                          SizedBox(height: 10),
                           _buildProfileFieldWithLabel(
-                              'Topic', _topicController, Icons.topic),
-                          SizedBox(height: 5),
+                              'Email', _emailController),
+                          SizedBox(height: 10),
                           _buildProfileFieldWithLabel(
-                              'Email', _emailController, Icons.email),
-                          SizedBox(height: 5),
-                          _buildProfileFieldWithLabel('Address',
-                              _addressController, Icons.location_city),
-                          SizedBox(height: 5),
-                          _buildProfileFieldWithLabel('LVtutor..',
-                              _educationLevelController, Icons.school),
+                              'Address', _addressController),
+                          SizedBox(height: 10),
+                          _buildProfileFieldWithLabel(
+                              'Education Level', _educationLevelController),
+                          SizedBox(height: 10),
+                          _buildLocationFields(),
                           SizedBox(height: 20),
                           _buildResumeSection(),
                           SizedBox(height: 20),
@@ -566,45 +677,69 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
   }
 
   Widget _buildProfileFieldWithLabel(
-      String label, TextEditingController controller, IconData icon) {
-    return Row(
-      children: [
-        Expanded(
-          child: Row(
-            children: [
-              Icon(icon, color: Colors.grey),
-              SizedBox(width: 5),
-              Text(
-                label,
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+      String label, TextEditingController controller) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+        decoration: BoxDecoration(
+          color: Colors.white, // พื้นหลังสีขาว
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.5),
+              spreadRadius: 2,
+              blurRadius: 5,
+              offset: Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.blue[800],
               ),
-            ],
-          ),
-        ),
-        Expanded(
-          flex: 3,
-          child: Card(
-            elevation: 4,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: widget.canEdit
-                  ? TextField(
-                      controller: controller,
-                      decoration: InputDecoration(
-                        border: InputBorder.none,
-                        labelStyle: TextStyle(color: Colors.black),
-                        prefixStyle: TextStyle(color: Colors.black),
-                      ),
-                      style: TextStyle(color: Colors.black),
-                      enabled: _isEditing,
-                    )
-                  : _buildProfileInfo(label, controller.text, icon),
+            SizedBox(height: 8.0),
+            TextField(
+              controller: controller,
+              enabled: _isEditing,
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.black87,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLocationFields() {
+    return Column(
+      children: [
+        _buildProfileFieldWithLabel('Latitude', _latitudeController),
+        SizedBox(height: 10),
+        _buildProfileFieldWithLabel('Longitude', _longitudeController),
+        SizedBox(height: 10),
+        if (widget.canEdit && _isEditing)
+          Center(
+            child: ElevatedButton.icon(
+              onPressed: _openMapPicker,
+              icon: Icon(Icons.my_location),
+              label: Text('Select Location on Map'),
             ),
           ),
-        ),
       ],
     );
   }
@@ -681,9 +816,11 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                   color: index < _rating ? Colors.yellow[700] : Colors.grey,
                 ),
                 onPressed: () {
-                  setState(() {
-                    _rating = index + 1;
-                  });
+                  if (mounted) {
+                    setState(() {
+                      _rating = index + 1;
+                    });
+                  }
                 },
               );
             }),
@@ -748,30 +885,23 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
     );
   }
 
-  Widget _buildProfileInfo(String label, String value, IconData icon) {
+  Widget _buildProfileInfo(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.grey),
-          SizedBox(width: 10),
-          Expanded(
-            child: Container(
-              padding: EdgeInsets.all(8.0),
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(8.0),
-              ),
-              child: Text(
-                value,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.black87,
-                ),
-              ),
-            ),
+      child: Container(
+        padding: EdgeInsets.all(8.0),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8.0),
+          border: Border.all(color: Colors.grey),
+        ),
+        child: Text(
+          value,
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.black87,
           ),
-        ],
+        ),
       ),
     );
   }

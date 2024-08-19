@@ -40,11 +40,13 @@ class _ChatListScreenState extends State<ChatListScreen> {
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         if (responseData['status'] == 'success') {
-          setState(() {
-            _conversations =
-                List<Map<String, dynamic>>.from(responseData['conversations']);
-            _isLoading = false;
-          });
+          if (mounted) {
+            setState(() {
+              _conversations = List<Map<String, dynamic>>.from(
+                  responseData['conversations']);
+              _isLoading = false;
+            });
+          }
         } else {
           throw Exception(
               'Failed to load conversations: ${responseData['message']}');
@@ -54,10 +56,12 @@ class _ChatListScreenState extends State<ChatListScreen> {
             'Failed to load conversations: ${response.reasonPhrase}');
       }
     } catch (e) {
-      setState(() {
-        _errorMessage = 'Failed to load conversations: $e';
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Failed to load conversations: $e';
+          _isLoading = false;
+        });
+      }
     }
   }
 

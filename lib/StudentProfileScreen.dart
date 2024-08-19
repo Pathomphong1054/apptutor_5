@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:apptutor_2/LocationPickerScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class StudentProfileScreen extends StatefulWidget {
   final String userName;
@@ -23,6 +25,8 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
   TextEditingController _nameController = TextEditingController();
   TextEditingController _emailController = TextEditingController();
   TextEditingController _addressController = TextEditingController();
+  TextEditingController _latitudeController = TextEditingController();
+  TextEditingController _longitudeController = TextEditingController();
   String? _profileImageUrl;
   bool _isEditing = false;
   bool isLoading = false;
@@ -41,18 +45,20 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
     try {
       final url = Uri.parse(
           'http://10.5.50.82/tutoring_app/get_student_profile.php?username=${widget.userName}');
-      print('Fetching profile for username: ${widget.userName}');
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
         final profileData = json.decode(response.body);
-        print('Profile Data: $profileData');
 
         if (profileData['status'] == 'success') {
           setState(() {
             _nameController.text = profileData['name'] ?? '';
             _emailController.text = profileData['email'] ?? '';
             _addressController.text = profileData['address'] ?? '';
+            _latitudeController.text =
+                profileData['latitude']?.toString() ?? '';
+            _longitudeController.text =
+                profileData['longitude']?.toString() ?? '';
             _profileImageUrl = profileData['profile_image'];
             isLoading = false;
           });
@@ -111,6 +117,8 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
       request.fields['name'] = _nameController.text;
       request.fields['email'] = _emailController.text;
       request.fields['address'] = _addressController.text;
+      request.fields['latitude'] = _latitudeController.text;
+      request.fields['longitude'] = _longitudeController.text;
 
       var response = await request.send();
 
@@ -141,6 +149,32 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
     }
   }
 
+  Future<void> _getCurrentLocation() async {
+    LatLng initialLocation = LatLng(
+      _latitudeController.text.isNotEmpty
+          ? double.parse(_latitudeController.text)
+          : 13.7563, // ค่าเริ่มต้นถ้า TextField ว่างเปล่า
+      _longitudeController.text.isNotEmpty
+          ? double.parse(_longitudeController.text)
+          : 100.5018, // ค่าเริ่มต้นถ้า TextField ว่างเปล่า
+    );
+
+    final pickedLocation = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => LocationPickerScreen(
+          initialLocation: initialLocation,
+        ),
+      ),
+    );
+
+    if (pickedLocation != null) {
+      setState(() {
+        _latitudeController.text = pickedLocation.latitude.toString();
+        _longitudeController.text = pickedLocation.longitude.toString();
+      });
+    }
+  }
+
   Future<void> _updateProfile() async {
     if (_nameController.text.isEmpty ||
         _emailController.text.isEmpty ||
@@ -161,6 +195,8 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
             'name': _nameController.text,
             'email': _emailController.text,
             'address': _addressController.text,
+            'latitude': _latitudeController.text,
+            'longitude': _longitudeController.text,
           },
         );
 
@@ -231,38 +267,86 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                               onTap: _isEditing
                                   ? () => _pickImage(ImageSource.gallery)
                                   : null,
-                              child: CircleAvatar(
-                                radius: 70,
-                                backgroundImage: _profileImage != null
-                                    ? FileImage(_profileImage!)
-                                    : (_profileImageUrl != null
-                                        ? NetworkImage(
-                                            'http://10.5.50.82/tutoring_app/uploads/$_profileImageUrl')
-                                        : AssetImage(
-                                                'images/default_profile.jpg')
-                                            as ImageProvider),
-                                child: Align(
-                                  alignment: Alignment.bottomRight,
-                                  child: Icon(
-                                    Icons.camera_alt,
-                                    color: _isEditing
-                                        ? Colors.blue[800]
-                                        : Colors.transparent,
-                                    size: 30,
+                              child: Stack(
+                                children: [
+                                  // โปรไฟล์รูปภาพ
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.2),
+                                          spreadRadius: 4,
+                                          blurRadius: 8,
+                                          offset: Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: CircleAvatar(
+                                      radius: 70,
+                                      backgroundImage: _profileImage != null
+                                          ? FileImage(_profileImage!)
+                                          : (_profileImageUrl != null
+                                              ? NetworkImage(
+                                                  'http://10.5.50.82/tutoring_app/uploads/$_profileImageUrl')
+                                              : AssetImage(
+                                                      'images/default_profile.jpg')
+                                                  as ImageProvider),
+                                      backgroundColor: Colors.transparent,
+                                    ),
                                   ),
-                                ),
+                                  if (_isEditing)
+                                    Positioned(
+                                      bottom: 0,
+                                      right: 0,
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: Colors.white,
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color:
+                                                  Colors.grey.withOpacity(0.5),
+                                              spreadRadius: 2,
+                                              blurRadius: 4,
+                                              offset: Offset(0, 2),
+                                            ),
+                                          ],
+                                        ),
+                                        padding: EdgeInsets.all(8),
+                                        child: Icon(
+                                          Icons.camera_alt,
+                                          color: Colors.blue[800],
+                                          size: 30,
+                                        ),
+                                      ),
+                                    ),
+                                ],
                               ),
                             ),
                           ),
                           SizedBox(height: 20),
-                          _buildProfileFieldWithLabel(
-                              'Name', _nameController, Icons.person),
-                          SizedBox(height: 10),
-                          _buildProfileFieldWithLabel(
-                              'Email', _emailController, Icons.email),
-                          SizedBox(height: 10),
-                          _buildProfileFieldWithLabel('Address',
-                              _addressController, Icons.location_city),
+                          _buildProfileCard(
+                              'Name', _nameController.text, Icons.person),
+                          _buildProfileCard(
+                              'Email', _emailController.text, Icons.email),
+                          _buildProfileCard(
+                              'Address', _addressController.text, Icons.home),
+                          _buildProfileCard('Latitude',
+                              _latitudeController.text, Icons.location_on),
+                          _buildProfileCard('Longitude',
+                              _longitudeController.text, Icons.location_on),
+                          if (_isEditing)
+                            Center(
+                              child: ElevatedButton.icon(
+                                onPressed: _getCurrentLocation,
+                                icon: Icon(Icons.my_location),
+                                label: Text('Use Current Location'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blue[800],
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                     ),
@@ -271,73 +355,27 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
     );
   }
 
-  Widget _buildProfileFieldWithLabel(
-      String label, TextEditingController controller, IconData icon) {
-    return Row(
-      children: [
-        Expanded(
-          child: Row(
-            children: [
-              Icon(icon, color: Colors.grey),
-              SizedBox(width: 5),
-              Text(
-                label,
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-              ),
-            ],
+  Widget _buildProfileCard(String label, String value, IconData icon) {
+    return Card(
+      elevation: 4,
+      margin: EdgeInsets.symmetric(vertical: 10),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: ListTile(
+        leading: Icon(icon, color: Colors.blue[800]),
+        title: Text(
+          label,
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+            color: Colors.blue[800],
           ),
         ),
-        Expanded(
-          flex: 3,
-          child: Card(
-            elevation: 4,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: _isEditing
-                  ? TextField(
-                      controller: controller,
-                      decoration: InputDecoration(
-                        border: InputBorder.none,
-                        labelStyle: TextStyle(color: Colors.black),
-                        prefixStyle: TextStyle(color: Colors.black),
-                      ),
-                      style: TextStyle(color: Colors.black),
-                    )
-                  : _buildProfileInfo(label, controller.text, icon),
-            ),
-          ),
+        subtitle: Text(
+          value,
+          style: TextStyle(fontSize: 16, color: Colors.black87),
         ),
-      ],
-    );
-  }
-
-  Widget _buildProfileInfo(String label, String value, IconData icon) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.grey),
-          SizedBox(width: 10),
-          Expanded(
-            child: Container(
-              padding: EdgeInsets.all(8.0),
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(8.0),
-              ),
-              child: Text(
-                value,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.black87,
-                ),
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
