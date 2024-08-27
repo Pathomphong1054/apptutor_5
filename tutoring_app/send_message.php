@@ -9,13 +9,15 @@ $sender = $input['sender'] ?? '';
 $recipient = $input['recipient'] ?? '';
 $message = $input['message'] ?? '';
 $session_id = $input['session_id'] ?? '';
+$latitude = $input['location']['latitude'] ?? null;
+$longitude = $input['location']['longitude'] ?? null;
 
 if (empty($sender) || empty($recipient) || empty($message) || empty($session_id)) {
-    echo json_encode(['status' => 'error', 'message' => 'Message and session ID cannot be empty']);
+    echo json_encode(['status' => 'error', 'message' => 'Message, sender, recipient, and session ID cannot be empty']);
     exit();
 }
 
-$query = "INSERT INTO messages (sender, recipient, message, session_id) VALUES ('$sender', '$recipient', '$message', '$session_id')";
+$query = "INSERT INTO messages (sender, recipient, message, session_id, latitude, longitude) VALUES ('$sender', '$recipient', '$message', '$session_id', '$latitude', '$longitude')";
 
 if (mysqli_query($con, $query)) {
     echo json_encode(['status' => 'success']);

@@ -1,10 +1,6 @@
 <?php
 require 'db_connection.php';
 
-// Enable error reporting
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
 header('Content-Type: application/json');
 
 $sender = $_GET['sender'] ?? '';
@@ -35,9 +31,10 @@ while ($row = mysqli_fetch_assoc($result)) {
         'recipient' => $row['recipient'],
         'message' => $row['message'],
         'timestamp' => $row['timestamp'],
-        'latitude' => $row['latitude'] ?? '', // แทนที่ค่า null ด้วยค่าว่าง
-        'longitude' => $row['longitude'] ?? '', // แทนที่ค่า null ด้วยค่าว่าง
-        'session_id' => $row['session_id'] ?? '' // แทนที่ค่า null ด้วยค่าว่าง
+        'latitude' => $row['latitude'] ?? '',
+        'longitude' => $row['longitude'] ?? '',
+        'session_id' => $row['session_id'] ?? '',
+        'image_url' => $row['file_path'] ?? ''  // Added file_path to response
     ];
 }
 

@@ -5,7 +5,7 @@ if (isset($_GET['student_id'])) {
     $student_id = $_GET['student_id'];
 
     // First query to get tutor IDs from favorites
-    $sql = "SELECT tutor_id FROM favorites WHERE student_id = ?";
+    $sql = "SELECT tutor_id FROM favorite_tutors WHERE student_id = ?";
     $stmt = $con->prepare($sql);
     $stmt->bind_param("i", $student_id);
     $stmt->execute();

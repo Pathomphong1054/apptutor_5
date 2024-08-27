@@ -14,6 +14,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $name = $_POST['name'];
         $email = $_POST['email'];
         $address = $_POST['address'];
+        $latitude = $_POST['latitude'];  // รับค่า latitude
+        $longitude = $_POST['longitude'];  // รับค่า longitude
         $profileImage = null;
 
         if (!empty($_FILES['profile_images']['name'])) {
@@ -37,11 +39,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
 
         if ($profileImage) {
-            $stmt = $con->prepare("UPDATE students SET name=?, email=?, address=?, profile_images=? WHERE name=?");
-            $stmt->bind_param("sssss", $name, $email, $address, $profileImage, $username);
+            $stmt = $con->prepare("UPDATE students SET name=?, email=?, address=?, latitude=?, longitude=?, profile_images=? WHERE name=?");
+            $stmt->bind_param("sssssss", $name, $email, $address, $latitude, $longitude, $profileImage, $username);
         } else {
-            $stmt = $con->prepare("UPDATE students SET name=?, email=?, address=? WHERE name=?");
-            $stmt->bind_param("ssss", $name, $email, $address, $username);
+            $stmt = $con->prepare("UPDATE students SET name=?, email=?, address=?, latitude=?, longitude=? WHERE name=?");
+            $stmt->bind_param("ssssss", $name, $email, $address, $latitude, $longitude, $username);
         }
 
         if ($stmt->execute()) {

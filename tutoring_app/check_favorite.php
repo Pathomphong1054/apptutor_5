@@ -1,6 +1,6 @@
 <?php
 // Database connection
-include 'db_connection.php';
+require 'db_connection.php';
 
 // Check request method
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 
     // Prepare and execute SQL query
-    $query = "SELECT COUNT(*) AS count FROM favorites WHERE student_id = ? AND tutor_id = ?";
+    $query = "SELECT COUNT(*) AS count FROM favorite_tutors WHERE student_id = ? AND tutor_id = ?";
     if ($stmt = $con->prepare($query)) {
         $stmt->bind_param('ii', $student_id, $tutor_id);
         $stmt->execute();

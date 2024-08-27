@@ -1,57 +1,33 @@
 <?php
-// Database connection
-include 'db_connection.php';
+$servername = "localhost";
+$username = "root";
+$password = "";
+$dbname = "tutoring_app";
 
-// Check request method
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // Retrieve POST data
+$conn = new mysqli($servername, $username, $password, $dbname);
+
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// ตัวอย่างการใช้ $conn
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $student_id = $_POST['student_id'];
     $tutor_id = $_POST['tutor_id'];
     $action = $_POST['action'];
 
-    // Validate input
-    if (empty($student_id) || empty($tutor_id) || empty($action)) {
-        echo json_encode(['status' => 'error', 'message' => 'Student ID, Tutor ID, and action are required']);
-        exit();
+    if ($action === 'add') {
+        $sql = "INSERT INTO favorite_tutors (student_id, tutor_id) VALUES ('$student_id', '$tutor_id')";
+    } else if ($action === 'remove') {
+        $sql = "DELETE FROM favorite_tutors WHERE student_id='$student_id' AND tutor_id='$tutor_id'";
     }
 
-    // Check if the action is to add or remove favorite
-    if ($action == 'add') {
-        // Prepare and execute SQL query to add favorite
-        $query = "INSERT INTO favorites (student_id, tutor_id) VALUES (?, ?)";
-        if ($stmt = $con->prepare($query)) {
-            $stmt->bind_param('ii', $student_id, $tutor_id);
-            if ($stmt->execute()) {
-                echo json_encode(['status' => 'success']);
-            } else {
-                echo json_encode(['status' => 'error', 'message' => 'Failed to add favorite']);
-            }
-            $stmt->close();
-        } else {
-            echo json_encode(['status' => 'error', 'message' => 'Failed to prepare statement']);
-        }
-    } elseif ($action == 'remove') {
-        // Prepare and execute SQL query to remove favorite
-        $query = "DELETE FROM favorites WHERE student_id = ? AND tutor_id = ?";
-        if ($stmt = $con->prepare($query)) {
-            $stmt->bind_param('ii', $student_id, $tutor_id);
-            if ($stmt->execute()) {
-                echo json_encode(['status' => 'success']);
-            } else {
-                echo json_encode(['status' => 'error', 'message' => 'Failed to remove favorite']);
-            }
-            $stmt->close();
-        } else {
-            echo json_encode(['status' => 'error', 'message' => 'Failed to prepare statement']);
-        }
+    if ($conn->query($sql) === TRUE) {
+        echo json_encode(["status" => "success"]);
     } else {
-        echo json_encode(['status' => 'error', 'message' => 'Invalid action']);
+        echo json_encode(["status" => "error", "message" => $conn->error]);
     }
-
-    // Close connection
-    $con->close();
-} else {
-    echo json_encode(['status' => 'error', 'message' => 'Invalid request method']);
 }
-exit();
+
+$conn->close();
 ?>

@@ -11,7 +11,7 @@ if (!$con) {
 $username = $_GET['username'];
 $role = $_GET['role'];
 
-if ($role == 'tutor') {
+if ($role == 'Tutor') {
     $stmt = $con->prepare("SELECT * FROM tutors WHERE name = ?");
 } else {
     $stmt = $con->prepare("SELECT * FROM students WHERE name = ?");
@@ -30,7 +30,7 @@ if ($result->num_rows > 0) {
         'topic' => isset($profile['topic']) ? $profile['topic'] : null,
         'email' => $profile['email'],
         'address' => $profile['address'],
-        'profile_image' => $profile['profile_images'],
+        'profile_image' => $profile['profile_images'], 
     ]);
 } else {
     echo json_encode(['status' => 'error', 'message' => 'User not found']);

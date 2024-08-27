@@ -1,5 +1,6 @@
 <?php
 require 'db_connection.php';
+header('Content-Type: application/json'); // Ensure JSON header is set
 
 if (!$con) {
     echo json_encode(['status' => 'error', 'message' => 'Connection error']);
@@ -8,7 +9,6 @@ if (!$con) {
 
 $email = $_POST['email'];
 $password = $_POST['password'];
-
 
 $stmt = $con->prepare("SELECT * FROM tutors WHERE email = ?");
 $stmt->bind_param("s", $email);
@@ -23,7 +23,8 @@ if ($result->num_rows == 1) {
             'message' => 'Login successful', 
             'name' => $row['name'], 
             'role' => $row['role'],
-            'id' => $row['id'] // เพิ่มการส่ง id กลับไปที่ Flutter
+            'profile_image' => $row['profile_images'] ?? null, // Ensure you have this column
+            'id' => $row['id'], // Ensure you have this column
         ]);
     } else {
         echo json_encode(['status' => 'error', 'message' => 'Incorrect password']);

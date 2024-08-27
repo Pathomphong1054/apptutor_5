@@ -1,38 +1,44 @@
 <?php
-
-require 'db_connection.php';
+require 'db_connection.php'; // เชื่อมต่อกับฐานข้อมูล
 
 header('Content-Type: application/json');
 
-// ตรวจสอบการเชื่อมต่อ
-if ($con->connect_error) {
-    die(json_encode(['status' => 'error', 'message' => 'Connection failed: ' . $con->connect_error]));
-}
+// ตรวจสอบว่ามีการส่งค่าพารามิเตอร์ที่จำเป็นเข้ามา
+$username = $_GET['username'] ?? '';
+$role = $_GET['role'] ?? '';
 
-// Get username and role from GET parameters
-$username = $_GET['username'];
-$role = $_GET['role'];
-
-if (!$username || !$role) {
-    echo json_encode(['status' => 'error', 'message' => 'Missing required parameters']);
+if (empty($username) || empty($role)) {
+    echo json_encode(['status' => 'error', 'message' => 'Invalid parameters']);
     exit();
 }
 
-// Fetch notifications from database
-$query = "SELECT * FROM notifications WHERE recipient = ? AND role = ?";
-$stmt = $con->prepare($query);
-$stmt->bind_param('ss', $username, $role);
+// ปรับคำสั่ง SQL โดยใช้เฉพาะคอลัมน์ที่มีในตาราง
+$query = "SELECT id, sender, message, created_at, type, is_read 
+          FROM notifications 
+          WHERE recipient = ? 
+          ORDER BY created_at DESC";
 
+$stmt = $con->prepare($query);
+
+if (!$stmt) {
+    echo json_encode(['status' => 'error', 'message' => 'Failed to prepare statement: ' . $con->error]);
+    exit();
+}
+
+$stmt->bind_param('s', $username);
 $stmt->execute();
 $result = $stmt->get_result();
 
 $notifications = [];
-
 while ($row = $result->fetch_assoc()) {
     $notifications[] = $row;
 }
 
-echo json_encode($notifications);
+if (count($notifications) > 0) {
+    echo json_encode(['status' => 'success', 'notifications' => $notifications]);
+} else {
+    echo json_encode(['status' => 'error', 'message' => 'No notifications found']);
+}
 
 $stmt->close();
 $con->close();

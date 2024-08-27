@@ -8,7 +8,7 @@ if (!$con) {
 
 // คำสั่ง SQL ที่จะดึงค่า average_rating สำหรับแต่ละ tutor
 $stmt = $con->prepare("
-    SELECT tutors.name, tutors.category, tutors.subject, tutors.topic, tutors.email, tutors.address, tutors.profile_images, 
+    SELECT tutors.id, tutors.name, tutors.category, tutors.subject, tutors.topic, tutors.email, tutors.address, tutors.profile_images, 
            IFNULL(AVG(reviews.rating), 0) as average_rating
     FROM tutors
     LEFT JOIN reviews ON tutors.name = reviews.tutor_name

@@ -1,31 +1,24 @@
 <?php
-
-require 'db_connection.php';
+require 'db_connection.php'; // เชื่อมต่อกับฐานข้อมูล
 
 header('Content-Type: application/json');
 
-// ตรวจสอบการเชื่อมต่อ
-if ($con->connect_error) {
-    die(json_encode(['status' => 'error', 'message' => 'Connection failed: ' . $con->connect_error]));
-}
+$notification_id = $_POST['notification_id'] ?? '';
 
-// Get notification_id from POST parameters
-$notification_id = $_POST['notification_id'];
-
-if (!$notification_id) {
-    echo json_encode(['status' => 'error', 'message' => 'Missing required parameters']);
+if (empty($notification_id)) {
+    echo json_encode(['status' => 'error', 'message' => 'Invalid notification ID']);
     exit();
 }
 
-// Update notification status
 $query = "UPDATE notifications SET is_read = 1 WHERE id = ?";
 $stmt = $con->prepare($query);
-$stmt->bind_param('i', $notification_id);
+$stmt->bind_param("i", $notification_id);
+$stmt->execute();
 
-if ($stmt->execute()) {
-    echo json_encode(['status' => 'success', 'message' => 'Notification status updated']);
+if ($stmt->affected_rows > 0) {
+    echo json_encode(['status' => 'success', 'message' => 'Notification updated']);
 } else {
-    echo json_encode(['status' => 'error', 'message' => 'Failed to update notification status']);
+    echo json_encode(['status' => 'error', 'message' => 'Failed to update notification']);
 }
 
 $stmt->close();

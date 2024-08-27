@@ -10,7 +10,7 @@ if (!$con) {
 
 if (isset($_GET['username'])) {
     $username = $_GET['username'];
-    $stmt = $con->prepare("SELECT name, email, address, role, profile_images FROM students WHERE name = ?");
+    $stmt = $con->prepare("SELECT name, email, address, role, profile_images, latitude, longitude FROM students WHERE name = ?");
     $stmt->bind_param("s", $username);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -23,7 +23,9 @@ if (isset($_GET['username'])) {
             'email' => $row['email'],
             'address' => $row['address'],
             'role' => $row['role'],
-            'profile_image' => $row['profile_images']
+            'profile_image' => $row['profile_images'],
+            'latitude' => $row['latitude'],  // เพิ่มการส่งค่า latitude
+            'longitude' => $row['longitude'] // เพิ่มการส่งค่า longitude
         ]);
     } else {
         echo json_encode(['status' => 'error', 'message' => 'User not found']);

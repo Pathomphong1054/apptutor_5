@@ -33,7 +33,21 @@ if ($query->num_rows > 0) {
     $query->fetch();
     echo json_encode(array("status" => "success", "session_id" => $session_id));
 } else {
-    echo json_encode(array("status" => "error", "message" => "Session not found"));
+    // If session not found, create a new one
+    $insert_query = $con->prepare("INSERT INTO tutoring_sessions (student, tutor) VALUES (?, ?)");
+    if ($insert_query === false) {
+        die(json_encode(array("status" => "error", "message" => "Failed to prepare insert query: " . $con->error)));
+    }
+    
+    $insert_query->bind_param("ss", $user, $recipient);
+    if ($insert_query->execute()) {
+        $new_session_id = $insert_query->insert_id;
+        echo json_encode(array("status" => "success", "session_id" => $new_session_id));
+    } else {
+        echo json_encode(array("status" => "error", "message" => "Failed to create new session: " . $con->error));
+    }
+
+    $insert_query->close();
 }
 
 $query->close();

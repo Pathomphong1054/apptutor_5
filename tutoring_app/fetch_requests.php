@@ -15,7 +15,7 @@ $roleResult = mysqli_query($con, $roleQuery);
 $roleRow = mysqli_fetch_assoc($roleResult);
 $role = $roleRow['role'];
 
-if ($role == 'tutor') {
+if ($role == 'Tutor') {
     $query = "
     SELECT requests.id, requests.sender, requests.recipient, requests.message, requests.created_at, students.profile_images as profile_image, requests.is_accepted 
     FROM requests 

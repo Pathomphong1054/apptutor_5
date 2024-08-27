@@ -1,5 +1,8 @@
 <?php
 require 'db_connection.php';
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
 if (!$con) {
     echo json_encode(['status' => 'error', 'message' => 'Connection error']);
@@ -9,7 +12,7 @@ if (!$con) {
 $email = $_POST['email'];
 $oldPassword = $_POST['old_password'];
 $newPassword = $_POST['new_password'];
-$role = $_POST['role'];
+$role = strtolower($_POST['role']);  // Convert the role to lowercase
 
 // Validate new password length
 if (strlen($newPassword) < 8) {
@@ -49,7 +52,7 @@ if ($user) {
         if ($stmt->execute()) {
             echo json_encode(['status' => 'success', 'message' => 'Password has been reset successfully']);
         } else {
-            echo json_encode(['status' => 'error', 'message' => 'Password reset failed']);
+            echo json_encode(['status' => 'error', 'message' => 'Failed to execute SQL query', 'error' => $stmt->error]);
         }
     } else {
         echo json_encode(['status' => 'error', 'message' => 'Old password is incorrect']);
