@@ -159,7 +159,6 @@ class _SubjectDetailScreenState extends State<SubjectDetailScreen> {
         builder: (context) {
           if (widget.userRole == 'tutor') {
             return StudentProfileScreen(
-              
               userName: userName,
               onProfileUpdated: () {},
             );
