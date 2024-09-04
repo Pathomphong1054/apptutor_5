@@ -23,6 +23,8 @@ class HomePage2 extends StatefulWidget {
   final String currentUserRole;
   final String idUser;
   final String tutorName;
+   final String recipientImage;
+
 
   const HomePage2({
     Key? key,
@@ -31,7 +33,7 @@ class HomePage2 extends StatefulWidget {
     required this.profileImageUrl,
     required this.currentUserRole,
     required this.idUser,
-    required this.tutorName,
+    required this.tutorName, required this.recipientImage,
   }) : super(key: key);
 
   @override
@@ -243,7 +245,7 @@ class _HomePage2State extends State<HomePage2>
           currentUserRole: widget.userRole,
           idUser: widget.idUser,
           userId: widget.idUser,
-          tutorId: tutorId,
+          tutorId: tutorId, 
         ),
       ),
     );
@@ -302,6 +304,7 @@ class _HomePage2State extends State<HomePage2>
             : StudentProfileScreen(
                 userName: userName,
                 onProfileUpdated: _onProfileUpdated,
+                userRole: 'student',
               ),
       ),
     );
@@ -330,6 +333,7 @@ class _HomePage2State extends State<HomePage2>
               currentUserImage: widget.profileImageUrl,
               currentUserRole: widget.userRole,
               idUser: widget.idUser,
+              recipientImage: widget.recipientImage
             ),
           ),
         );
@@ -378,15 +382,17 @@ class _HomePage2State extends State<HomePage2>
             context,
             MaterialPageRoute(
               builder: (context) => TutorSentRequestsScreen(
-                tutorName: 'ชื่อของติวเตอร์', // ระบุชื่อติวเตอร์ที่ต้องการส่งไป
-                tutorId: 'idของติวเตอร์',
-                userRole: 'roleของผู้ใช้',
-                userName: 'ชื่อผู้ใช้',
-                idUser: 'idของผู้ใช้',
+                tutorName: widget.userName, // ใช้ตัวแปรจริงที่เก็บชื่อติวเตอร์
+                tutorId: '', // ใช้ ID ของติวเตอร์จริง
+                userRole: widget.userRole, // ใช้ role ของผู้ใช้จริง
+                userName: widget.userName, // ชื่อผู้ใช้จริง
+                idUser: widget.idUser, // ID ของผู้ใช้จริง
+                profileImageUrl: widget.profileImageUrl,
               ),
             ),
           );
         }
+
         break;
       case 4:
         Navigator.push(
@@ -463,6 +469,7 @@ class _HomePage2State extends State<HomePage2>
                         ? StudentProfileScreen(
                             userName: _userName!,
                             onProfileUpdated: _onProfileUpdated,
+                            userRole: 'student',
                           )
                         : TutorProfileScreen(
                             userName: _userName!,

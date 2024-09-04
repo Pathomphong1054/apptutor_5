@@ -46,6 +46,8 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
+    print("Recipient Image URL: ${widget.recipientImage}");
+    print("Current User Image URL: ${widget.currentUserImage}");
     _loadMessages();
   }
 
@@ -170,8 +172,10 @@ class _ChatScreenState extends State<ChatScreen> {
         'sender': widget.currentUser,
         'recipient': widget.recipient,
         'message': message,
-        'latitude': position.latitude.toString(),
-        'longitude': position.longitude.toString(),
+        'latitude':
+            position.latitude.toString(), // ตรวจสอบให้แน่ใจว่าส่งค่าที่ถูกต้อง
+        'longitude':
+            position.longitude.toString(), // ตรวจสอบให้แน่ใจว่าส่งค่าที่ถูกต้อง
         'session_id': widget.sessionId,
       }),
     );
@@ -277,6 +281,7 @@ class _ChatScreenState extends State<ChatScreen> {
             return StudentProfileScreen(
               userName: widget.recipient,
               onProfileUpdated: () {},
+              userRole: 'student',
             );
           } else {
             return TutorProfileScreen(
@@ -313,13 +318,33 @@ class _ChatScreenState extends State<ChatScreen> {
       MaterialPageRoute(
         builder: (context) => MapScreen(
           tutorName: widget.recipient,
+          initialPosition:
+              _getPreviousPosition(), // ฟังก์ชันดึงตำแหน่งก่อนหน้านี้
         ),
       ),
     );
 
     if (selectedPosition != null) {
-      _sendMessageWithLocation(selectedPosition);
+      await _sendMessageWithLocation(selectedPosition); // ส่งตำแหน่งไปยังแชท
+      _savePosition(
+          selectedPosition); // บันทึกตำแหน่งลงหน่วยความจำหรือฐานข้อมูล
     }
+  }
+
+// ฟังก์ชันบันทึกตำแหน่งที่เลือกไว้
+  void _savePosition(LatLng position) {
+    // คุณสามารถใช้ shared preferences หรือฐานข้อมูลสำหรับเก็บตำแหน่งนี้ได้
+    setState(() {
+      _allMessages[widget.sessionId] =
+          _messages; // อัปเดตข้อมูลแชทด้วยตำแหน่งใหม่
+    });
+  }
+
+// ฟังก์ชันดึงตำแหน่งก่อนหน้านี้
+  LatLng? _getPreviousPosition() {
+    // ดึงข้อมูลจาก shared preferences หรือฐานข้อมูล
+    // ตัวอย่างใช้ค่าเริ่มต้นเป็น null
+    return null; // ปรับให้เหมาะกับที่เก็บข้อมูล
   }
 
   @override
@@ -396,15 +421,17 @@ class _ChatScreenState extends State<ChatScreen> {
                                         CircleAvatar(
                                           backgroundImage: widget
                                                   .recipientImage.isNotEmpty
-                                              ? NetworkImage(
-                                                  widget.recipientImage)
+                                              ? NetworkImage(widget
+                                                  .recipientImage) // ใช้ `recipientImage` ที่ถูกส่งมา
                                               : AssetImage(
                                                       'images/default_profile.jpg')
-                                                  as ImageProvider,
+                                                  as ImageProvider, // รูปโปรไฟล์ค่าเริ่มต้น
                                           radius: 20,
                                           backgroundColor: Colors.grey[300],
                                         ),
                                       if (!isCurrentUser) SizedBox(width: 10),
+
+                                      // ส่วนของข้อความหรือแผนที่ตามเงื่อนไข
                                       if (location != null)
                                         GestureDetector(
                                           onTap: () => _openMap(location!),

@@ -9,12 +9,14 @@ class ChatListScreen extends StatefulWidget {
   final String currentUserImage;
   final String currentUserRole;
   final String idUser;
+  final String recipientImage;
 
   const ChatListScreen({
     required this.currentUser,
     required this.currentUserImage,
     required this.currentUserRole,
     required this.idUser,
+    required this.recipientImage,
   });
 
   @override
@@ -44,6 +46,14 @@ class _ChatListScreenState extends State<ChatListScreen> {
             setState(() {
               _conversations = List<Map<String, dynamic>>.from(
                   responseData['conversations']);
+
+              // เรียงลำดับตาม `timestamp` โดยแชทล่าสุดอยู่ด้านบน
+              _conversations.sort((a, b) {
+                DateTime dateA = DateTime.parse(a['timestamp']);
+                DateTime dateB = DateTime.parse(b['timestamp']);
+                return dateB.compareTo(dateA); // dateB อยู่บน dateA
+              });
+
               _isLoading = false;
             });
           }
@@ -86,6 +96,10 @@ class _ChatListScreenState extends State<ChatListScreen> {
     try {
       String? sessionId = await _fetchSessionId(recipient);
       if (sessionId != null) {
+        print("Navigating to ChatScreen with:");
+        print("Recipient Image: $recipientImage");
+        print("Current User Image: ${widget.currentUserImage}");
+
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -102,15 +116,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
             ),
           ),
         );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Session ID not found')),
-        );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to fetch session ID: $e')),
-      );
+      print('Error: $e');
     }
   }
 

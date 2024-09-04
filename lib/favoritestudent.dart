@@ -64,6 +64,7 @@ class _FavoriteStudentScreenState extends State<FavoriteStudentScreen> {
         builder: (context) => StudentProfileScreen(
           userName: student['name'],
           onProfileUpdated: () {},
+          userRole: 'student',
         ),
       ),
     );

@@ -24,7 +24,7 @@ class TutoringScheduleScreen extends StatefulWidget {
 }
 
 class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
-  DateTime? selectedDay;
+  List<DateTime> selectedDays = []; // เก็บวันที่ที่เลือก
   TimeOfDay? startTime;
   TimeOfDay? endTime;
   int selectedRate = 1;
@@ -35,6 +35,7 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
   String tutorId = '';
 
   List<Map<String, dynamic>> rates = [];
+  Set<DateTime> scheduledDays = {}; // เซ็ตที่เก็บวันที่มีการนัดเรียนแล้ว
 
   CalendarFormat _calendarFormat = CalendarFormat.month;
   DateTime _focusedDay = DateTime.now();
@@ -59,19 +60,21 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
         setState(() {
           _scheduledSessions =
               List<Map<String, dynamic>>.from(responseData['sessions']);
+          // เก็บวันที่ที่มีการนัดหมายแล้วใน scheduledDays
+          scheduledDays = _scheduledSessions
+              .map((session) => DateTime.parse(session['date']))
+              .toSet();
         });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text(
-                  'Failed to load scheduled sessions: ${responseData['message']}')),
+                  'ล้มเหลวในการโหลดตารางเรียน: ${responseData['message']}')),
         );
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content:
-                Text('Failed to load scheduled sessions: ${response.body}')),
+        SnackBar(content: Text('ล้มเหลวในการโหลดตารางเรียน: ${response.body}')),
       );
     }
   }
@@ -135,7 +138,7 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
           break;
         case 'ป.ตรี':
         default:
-          baseRate = 180.0;
+          baseRate = 220.0;
           break;
       }
       setState(() {
@@ -149,67 +152,80 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
   }
 
   Future<void> _scheduleSession() async {
-    if (selectedDay != null && startTime != null && endTime != null) {
-      final response = await http.post(
-        Uri.parse('http://10.5.50.82/tutoring_app/schedule_session.php'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'student': widget.currentUser,
-          'tutor': widget.tutorName,
-          'date': selectedDay.toString(),
-          'startTime': startTime!.format(context),
-          'endTime': endTime!.format(context),
-          'rate': selectedRate,
-        }),
-      );
+    if (selectedDays.isNotEmpty && startTime != null && endTime != null) {
+      // ใช้ List เพื่อเก็บ session_id สำหรับแต่ละวัน
+      List<String> sessionIds = [];
 
-      if (response.statusCode == 200) {
-        try {
-          final responseData = json.decode(response.body);
-          if (responseData['status'] == 'success') {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Session scheduled successfully')),
-            );
+      for (DateTime selectedDay in selectedDays) {
+        final response = await http.post(
+          Uri.parse('http://10.5.50.82/tutoring_app/schedule_session.php'),
+          headers: {'Content-Type': 'application/json'},
+          body: json.encode({
+            'student': widget.currentUser,
+            'tutor': widget.tutorName,
+            'date': selectedDay.toString(),
+            'startTime': startTime!.format(context),
+            'endTime': endTime!.format(context),
+            'rate': selectedRate,
+          }),
+        );
 
-            await _sendMessageToTutor(responseData['session_id'].toString());
-          } else {
+        if (response.statusCode == 200) {
+          try {
+            final responseData = json.decode(response.body);
+            if (responseData['status'] == 'success') {
+              // เก็บ session_id ใน list
+              sessionIds.add(responseData['session_id'].toString());
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content:
+                      Text('ล้มเหลวในการนัดเรียน: ${responseData['message']}'),
+                ),
+              );
+            }
+          } catch (e) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                  content: Text(
-                      'Failed to schedule session: ${responseData['message']}')),
+              SnackBar(content: Text('ล้มเหลวในการอ่านข้อมูล: $e')),
             );
           }
-        } catch (e) {
+        } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to parse response: $e')),
+            SnackBar(content: Text('ล้มเหลวในการนัดเรียน: ${response.body}')),
           );
         }
-      } else {
+      }
+
+      // ส่งข้อความถึงติวเตอร์หลังจากสร้าง session สำหรับทุกวันที่เลือกเสร็จสิ้นแล้ว
+      if (sessionIds.isNotEmpty) {
+        await _sendMessageToTutor(sessionIds);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('Failed to schedule session: ${response.body}')),
+          SnackBar(content: Text('ทำการนัดเรียนสำเร็จ')),
         );
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please select a day and time')),
+        SnackBar(content: Text('กรุณาเลือกวันและเวลา')),
       );
     }
   }
 
-  Future<void> _sendMessageToTutor(String sessionId) async {
+  Future<void> _sendMessageToTutor(List<String> sessionIds) async {
     final price =
         rates.firstWhere((rate) => rate['people'] == selectedRate)['price'];
-    final message =
-        '''A new tutoring session has been scheduled with you on ${selectedDay.toString()}
-    from ${startTime!.format(context)} to ${endTime!.format(context)}.
-    The rate is $selectedRate people at ${price.toStringAsFixed(2)} THB.''';
+
+    // สร้างข้อความเพื่อแสดงวันที่ที่เลือกทั้งหมดในรูปแบบภาษาไทย
+    final message = '''
+ได้มีการนัดเรียนกับคุณในวันที่ ${selectedDays.map((day) => '${day.day}/${day.month}/${day.year}').join(', ')}
+ตั้งแต่เวลา ${startTime!.format(context)} ถึง ${endTime!.format(context)}.
+ราคาสำหรับ $selectedRate คน คือ ${price.toStringAsFixed(2)} บาท.''';
 
     final payload = json.encode({
       'sender': widget.currentUser,
       'recipient': widget.tutorName,
       'message': message,
-      'session_id': sessionId,
+      'session_id':
+          sessionIds.join(', '), // รวม session_id ทั้งหมดในข้อความเดียว
     });
 
     final response = await http.post(
@@ -223,7 +239,7 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
         final responseData = json.decode(response.body);
         if (responseData['status'] == 'success') {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Message sent to tutor')),
+            SnackBar(content: Text('ส่งข้อความไปหาติวเตอร์แล้ว')),
           );
           // Navigate to ChatScreen with the tutor
           Navigator.push(
@@ -234,11 +250,11 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
                 recipient: widget.tutorName,
                 recipientImage: widget.tutorImage,
                 currentUserImage: widget.currentUserImage,
-                sessionId: sessionId,
+                sessionId: sessionIds.first, // ส่ง sessionId แรกไปใน Chat
                 currentUserRole: 'student',
                 idUser: widget.idUser,
                 userId: widget.idUser,
-                tutorId: tutorId, // Pass currentUserRole as 'student'
+                tutorId: tutorId,
               ),
             ),
           );
@@ -246,17 +262,17 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
                 content:
-                    Text('Failed to send message: ${responseData['message']}')),
+                    Text('ล้มเหลวในการส่งข้อความ: ${responseData['message']}')),
           );
         }
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to parse response: $e')),
+          SnackBar(content: Text('ล้มเหลวในการอ่านข้อมูล: $e')),
         );
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to send message: ${response.body}')),
+        SnackBar(content: Text('ล้มเหลวในการส่งข้อความ: ${response.body}')),
       );
     }
   }
@@ -265,7 +281,7 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Tutoring Schedule'),
+        title: Text('ตารางเรียนกับติวเตอร์'),
         backgroundColor: const Color.fromARGB(255, 28, 195, 198),
         elevation: 0,
       ),
@@ -275,7 +291,7 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Tutor: ${widget.tutorName}',
+              'ติวเตอร์: ${widget.tutorName}',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 20),
@@ -285,23 +301,33 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
               firstDay: DateTime.utc(2024, 1, 1),
               lastDay: DateTime.utc(2024, 12, 31),
               selectedDayPredicate: (day) {
-                return isSameDay(selectedDay, day);
+                return selectedDays.contains(day);
               },
               onDaySelected: (selectedDay, focusedDay) {
-                if (_isDayScheduled(selectedDay)) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                        content: Text(
-                            'This day is already scheduled. Please choose another day.')),
-                  );
-                } else {
-                  setState(() {
-                    this.selectedDay = selectedDay;
-                  });
-                }
+                setState(() {
+                  if (selectedDays.contains(selectedDay)) {
+                    selectedDays.remove(selectedDay); // ลบวันที่เลือก
+                  } else {
+                    if (!_isDayScheduled(selectedDay)) {
+                      selectedDays.add(selectedDay); // เพิ่มวันที่ที่เลือก
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('วันนี้มีการนัดเรียนแล้ว')),
+                      );
+                    }
+                  }
+                });
               },
               onPageChanged: (focusedDay) {
                 _focusedDay = focusedDay;
+              },
+              // ใช้ eventLoader เพื่อโหลดเครื่องหมาย
+              eventLoader: (day) {
+                if (scheduledDays
+                    .any((scheduledDate) => isSameDay(scheduledDate, day))) {
+                  return ['Scheduled']; // คืนค่าวันที่มีการนัดหมาย
+                }
+                return []; // ไม่มีเหตุการณ์
               },
               calendarStyle: CalendarStyle(
                 todayDecoration: BoxDecoration(
@@ -312,9 +338,9 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
                   color: Colors.blueAccent,
                   shape: BoxShape.circle,
                 ),
-                markersMaxCount: 1,
+                markersMaxCount: 1, // แสดงเครื่องหมายสำหรับวันที่มีการนัดหมาย
                 markerDecoration: BoxDecoration(
-                  color: Colors.redAccent,
+                  color: Colors.red, // สีเครื่องหมายเป็นสีแดง
                   shape: BoxShape.circle,
                 ),
               ),
@@ -328,11 +354,11 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
               ),
             ),
             SizedBox(height: 20),
-            _buildTimePickerRow('Start Time:', startTimeController, true),
+            _buildTimePickerRow('เวลาเริ่มต้น:', startTimeController, true),
             SizedBox(height: 10),
-            _buildTimePickerRow('End Time:', endTimeController, false),
+            _buildTimePickerRow('เวลาสิ้นสุด:', endTimeController, false),
             SizedBox(height: 10),
-            _buildDropdown('Level of Education', selectedLevel, <String>[
+            _buildDropdown('ระดับการศึกษา', selectedLevel, <String>[
               'ประถม1-3',
               'ประถม4-6',
               'มัธยม1-3',
@@ -348,7 +374,7 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
             }),
             SizedBox(height: 10),
             Text(
-              'Price rate',
+              'อัตราค่าบริการ',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             ListView.builder(
@@ -382,7 +408,7 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
                   ),
                 ),
                 child: Text(
-                  'Schedule',
+                  'ทำการนัดหมาย',
                   style: TextStyle(fontSize: 18, color: Colors.white),
                 ),
               ),
@@ -412,7 +438,7 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
               _selectTime(context, isStartTime);
             },
             decoration: InputDecoration(
-              hintText: 'Select Time',
+              hintText: 'เลือกเวลา',
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
               ),

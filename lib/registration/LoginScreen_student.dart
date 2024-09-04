@@ -56,7 +56,8 @@ class _LoginScreenStudentState extends State<LoginScreenStudent> {
                 profileImageUrl: profileImageUrl,
                 currentUserRole: 'student',
                 idUser: idUser,
-                tutorName: '',
+                tutorName: '', recipientImage: '',
+                
               ),
             ),
           );

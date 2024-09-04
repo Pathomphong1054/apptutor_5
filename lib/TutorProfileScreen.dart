@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:apptutor_2/FullScreenImageViewer.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
@@ -764,8 +765,24 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
           ),
           SizedBox(height: 10),
           _resumeImageUrl != null
-              ? Image.network(
-                  'http://10.5.50.82/tutoring_app/uploads/$_resumeImageUrl')
+              ? GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => FullScreenImageViewer(
+                          imageUrl:
+                              'http://10.5.50.82/tutoring_app/uploads/$_resumeImageUrl',
+                        ),
+                      ),
+                    );
+                  },
+                  child: Image.network(
+                    'http://10.5.50.82/tutoring_app/uploads/$_resumeImageUrl',
+                    height: 400, // กำหนดขนาดรูปในหน้าหลัก (ไม่เต็มจอ)
+                    fit: BoxFit.cover,
+                  ),
+                )
               : Text(
                   'No resume uploaded',
                   style: TextStyle(

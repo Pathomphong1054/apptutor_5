@@ -9,11 +9,13 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 class StudentProfileScreen extends StatefulWidget {
   final String userName;
   final VoidCallback onProfileUpdated;
+  final String userRole;
 
   const StudentProfileScreen({
     Key? key,
     required this.userName,
     required this.onProfileUpdated,
+    required this.userRole,
   }) : super(key: key);
 
   @override
@@ -223,12 +225,8 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
         title: Text('Student Profile'),
         backgroundColor: const Color.fromARGB(255, 28, 195, 198),
         actions: [
-          if (_isEditing)
-            IconButton(
-              icon: Icon(Icons.check),
-              onPressed: _updateProfile,
-            ),
-          if (!_isEditing)
+          // แสดงปุ่มแก้ไขถ้า userRole ไม่ใช่ "Tutor"
+          if (widget.userRole != 'Tutor')
             IconButton(
               icon: Icon(Icons.edit),
               onPressed: () {

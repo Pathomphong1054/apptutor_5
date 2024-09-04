@@ -146,7 +146,7 @@ class _SubjectDetailScreenState extends State<SubjectDetailScreen> {
           currentUserRole: widget.userRole,
           idUser: widget.idUser,
           userId: widget.idUser,
-          tutorId: tutorId,
+          tutorId: tutorId, 
         ),
       ),
     );
@@ -161,6 +161,7 @@ class _SubjectDetailScreenState extends State<SubjectDetailScreen> {
             return StudentProfileScreen(
               userName: userName,
               onProfileUpdated: () {},
+              userRole: 'student',
             );
           } else {
             return TutorProfileScreen(
