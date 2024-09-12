@@ -226,13 +226,17 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
         title: Text('Student Profile'),
         backgroundColor: const Color.fromARGB(255, 28, 195, 198),
         actions: [
-          // แสดงปุ่มแก้ไขถ้า userRole ไม่ใช่ "Tutor"
-          if (widget.userRole != 'Tutor')
+          if (_isEditing)
+            IconButton(
+              icon: Icon(Icons.save),
+              onPressed: _updateProfile, // บันทึกเมื่อกดปุ่ม
+            )
+          else
             IconButton(
               icon: Icon(Icons.edit),
               onPressed: () {
                 setState(() {
-                  _isEditing = true;
+                  _isEditing = true; // เปิดการแก้ไข
                 });
               },
             ),
@@ -325,16 +329,16 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                             ),
                           ),
                           SizedBox(height: 20),
-                          _buildProfileCard(
-                              'Name', _nameController.text, Icons.person),
-                          _buildProfileCard(
-                              'Email', _emailController.text, Icons.email),
-                          _buildProfileCard(
-                              'Address', _addressController.text, Icons.home),
-                          _buildProfileCard('Latitude',
-                              _latitudeController.text, Icons.location_on),
-                          _buildProfileCard('Longitude',
-                              _longitudeController.text, Icons.location_on),
+                          _buildEditableProfileCard(
+                              'Name', _nameController, Icons.person),
+                          _buildEditableProfileCard(
+                              'Email', _emailController, Icons.email),
+                          _buildEditableProfileCard(
+                              'Address', _addressController, Icons.home),
+                          _buildEditableProfileCard('Latitude',
+                              _latitudeController, Icons.location_on),
+                          _buildEditableProfileCard('Longitude',
+                              _longitudeController, Icons.location_on),
                           if (_isEditing)
                             Center(
                               child: ElevatedButton.icon(
@@ -354,7 +358,8 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
     );
   }
 
-  Widget _buildProfileCard(String label, String value, IconData icon) {
+  Widget _buildEditableProfileCard(
+      String label, TextEditingController controller, IconData icon) {
     return Card(
       elevation: 4,
       margin: EdgeInsets.symmetric(vertical: 10),
@@ -371,10 +376,17 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
             color: Colors.blue[800],
           ),
         ),
-        subtitle: Text(
-          value,
-          style: TextStyle(fontSize: 16, color: Colors.black87),
-        ),
+        subtitle: _isEditing
+            ? TextFormField(
+                controller: controller,
+                decoration: InputDecoration(
+                  border: InputBorder.none,
+                ),
+              )
+            : Text(
+                controller.text,
+                style: TextStyle(fontSize: 16, color: Colors.black87),
+              ),
       ),
     );
   }
