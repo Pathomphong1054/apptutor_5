@@ -65,7 +65,7 @@ class _LoginScreenStudentState extends State<LoginScreenStudent> {
                 tutorName: '',
                 recipientImage: recipientImage, // ส่งค่า recipientImage
                 currentUserImage: currentUserImage, // ส่งค่า currentUserImage
-                tutorId: '',
+                tutorId: '', userImageUrl: '',
               ),
             ),
           );

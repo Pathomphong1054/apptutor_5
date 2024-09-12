@@ -1,8 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:apptutor_2/LocationPickerScreen.dart'; // เพิ่มการ import หน้าจอเลือกแผนที่
 import '../home_pagetutor.dart';
 
 class StudentRegistrationScreen extends StatefulWidget {
@@ -20,6 +22,10 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
   String _selectedProvince = 'Bangkok';
   bool _isLoading = false;
   File? _profileImage;
+  TextEditingController _addressController =
+      TextEditingController(); // ควบคุมที่อยู่ที่เลือก
+  double? _selectedLatitude; // ตัวแปรสำหรับเก็บละติจูด
+  double? _selectedLongitude; // ตัวแปรสำหรับเก็บลองจิจูด
 
   @override
   Widget build(BuildContext context) {
@@ -146,94 +152,14 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
                     obscureText: true,
                   ),
                   SizedBox(height: 10),
-                  DropdownButtonFormField<String>(
-                    value: _selectedProvince,
-                    onChanged: (newValue) {
-                      setState(() {
-                        _selectedProvince = newValue!;
-                      });
-                    },
-                    items: <String>[
-                      'Bangkok',
-                      'Krabi',
-                      'Kanchanaburi',
-                      'Kalasin',
-                      'Kamphaeng Phet',
-                      'Khon Kaen',
-                      'Chanthaburi',
-                      'Chachoengsao',
-                      'Chon Buri',
-                      'Chai Nat',
-                      'Chaiyaphum',
-                      'Chumphon',
-                      'Chiang Mai',
-                      'Chiang Rai',
-                      'Trang',
-                      'Trat',
-                      'Tak',
-                      'Nakhon Nayok',
-                      'Nakhon Pathom',
-                      'Nakhon Phanom',
-                      'Nakhon Ratchasima',
-                      'Nakhon Si Thammarat',
-                      'Nakhon Sawan',
-                      'Nonthaburi',
-                      'Narathiwat',
-                      'Nan',
-                      'Bueng Kan',
-                      'Buriram',
-                      'Pathum Thani',
-                      'Prachuap Khiri Khan',
-                      'Prachinburi',
-                      'Pattani',
-                      'Phra Nakhon Si Ayutthaya',
-                      'Phang Nga',
-                      'Phatthalung',
-                      'Phichit',
-                      'Phitsanulok',
-                      'Phetchaburi',
-                      'Phetchabun',
-                      'Phuket',
-                      'Maha Sarakham',
-                      'Mukdahan',
-                      'Mae Hong Son',
-                      'Yasothon',
-                      'Yala',
-                      'Roi Et',
-                      'Ranong',
-                      'Rayong',
-                      'Lopburi',
-                      'Lampang',
-                      'Lamphun',
-                      'Loei',
-                      'Si Sa Ket',
-                      'Sakon Nakhon',
-                      'Songkhla',
-                      'Satun',
-                      'Samut Prakan',
-                      'Samut Sakhon',
-                      'Samut Songkhram',
-                      'Saraburi',
-                      'Sing Buri',
-                      'Sukhothai',
-                      'Suphan Buri',
-                      'Surat Thani',
-                      'Surin',
-                      'Nong Khai',
-                      'Nong Bua Lamphu',
-                      'Amnat Charoen',
-                      'Udon Thani',
-                      'Uttaradit',
-                      'Uthai Thani',
-                      'Ubon Ratchathani',
-                    ].map<DropdownMenuItem<String>>((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
+
+                  // ปุ่มเลือกที่อยู่จากแผนที่
+                  TextFormField(
+                    controller: _addressController, // ฟิลด์แสดงที่อยู่ที่เลือก
+                    readOnly: true, // ไม่ให้ผู้ใช้พิมพ์ในฟิลด์นี้
+                    onTap: _selectLocation, // เมื่อกดที่ฟิลด์ จะเปิดแผนที่
                     decoration: InputDecoration(
-                      labelText: 'Province',
+                      labelText: 'Select Address',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(30),
                         borderSide: BorderSide(
@@ -247,6 +173,7 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
                     ),
                   ),
                   SizedBox(height: 20),
+
                   Center(
                     child: _isLoading
                         ? CircularProgressIndicator()
@@ -290,6 +217,53 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
     }
   }
 
+  Future<void> _selectLocation() async {
+    LatLng? pickedLocation = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LocationPickerScreen(
+          initialLocation: LatLng(13.7563, 100.5018), // พิกัดเริ่มต้น
+        ),
+      ),
+    );
+
+    if (pickedLocation != null) {
+      setState(() {
+        _selectedLatitude = pickedLocation.latitude;
+        _selectedLongitude = pickedLocation.longitude;
+      });
+
+      // เมื่อผู้ใช้เลือกพิกัดแล้ว ดึงที่อยู่จากพิกัด
+      _getAddressFromCoordinates(
+          pickedLocation.latitude, pickedLocation.longitude);
+    }
+  }
+
+  Future<void> _getAddressFromCoordinates(
+      double latitude, double longitude) async {
+    final apiKey =
+        'AIzaSyAijDTG6loIcfDwQyU94VTK0ru1-55OylI'; // ใส่ API Key ของคุณ
+    final url = Uri.parse(
+        'https://maps.googleapis.com/maps/api/geocode/json?latlng=$latitude,$longitude&key=$apiKey');
+
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['status'] == 'OK') {
+          final address = data['results'][0]['formatted_address'];
+
+          // อัปเดตฟิลด์ที่อยู่ด้วยที่อยู่ที่ได้จาก API
+          setState(() {
+            _addressController.text = address;
+          });
+        }
+      }
+    } catch (e) {
+      print('Error fetching address: $e');
+    }
+  }
+
   Future<void> registerStudent(BuildContext context) async {
     final String name = _nameController.text;
     final String email = _emailController.text;
@@ -322,7 +296,9 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
     request.fields['name'] = name;
     request.fields['email'] = email;
     request.fields['password'] = password;
-    request.fields['address'] = _selectedProvince;
+    request.fields['address'] = _addressController.text; // ที่อยู่จากแผนที่
+    request.fields['latitude'] = _selectedLatitude.toString(); // ส่งละติจูด
+    request.fields['longitude'] = _selectedLongitude.toString(); // ส่งลองจิจูด
 
     request.files.add(await http.MultipartFile.fromPath(
       'profile_image',
@@ -337,6 +313,24 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
 
     if (response.statusCode == 200) {
       var responseData = await response.stream.bytesToString();
+      print('Response Data: $responseData'); // เพิ่มการพิมพ์ข้อมูล response
+
+      try {
+        var data = json.decode(responseData);
+        if (data['status'] == 'success') {
+          // ดำเนินการต่อ
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(data['message'])),
+          );
+        }
+      } catch (e) {
+        print('Error parsing JSON: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error parsing server response')),
+        );
+      }
+
       var data = json.decode(responseData);
 
       if (data['status'] == 'success') {
@@ -358,6 +352,7 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
               recipientImage: '',
               currentUserImage: '',
               tutorId: '',
+              userImageUrl: '',
             ),
           ),
         );

@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:apptutor_2/LocationPickerScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:apptutor_2/LocationPickerScreen.dart'; // ไฟล์ที่ใช้ในการเลือกสถานที่
 
 class StudentProfileScreen extends StatefulWidget {
   final String userName;
@@ -92,6 +92,49 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
     );
   }
 
+  // ฟังก์ชันอัปเดตโปรไฟล์
+  Future<void> _updateProfile() async {
+    if (_nameController.text.isEmpty ||
+        _emailController.text.isEmpty ||
+        _addressController.text.isEmpty) {
+      _showSnackBar('Please fill in all the fields');
+      return;
+    }
+
+    if (_profileImage != null) {
+      await _uploadProfileImage(_profileImage!);
+    } else {
+      try {
+        var response = await http.post(
+          Uri.parse(
+              'http://10.5.50.82/tutoring_app/update_student_profile.php'),
+          body: {
+            'username': widget.userName,
+            'name': _nameController.text,
+            'email': _emailController.text,
+            'address': _addressController.text,
+            'latitude': _latitudeController.text,
+            'longitude': _longitudeController.text,
+          },
+        );
+
+        var jsonData = json.decode(response.body);
+        if (jsonData['status'] == 'success') {
+          _showSnackBar('Profile updated successfully');
+          widget.onProfileUpdated();
+          setState(() {
+            _isEditing = false;
+          });
+        } else {
+          _showSnackBar('Failed to update profile: ${jsonData['message']}');
+        }
+      } catch (e) {
+        _showSnackBar('Error updating profile: $e');
+      }
+    }
+  }
+
+  // ฟังก์ชันสำหรับเลือกและอัปโหลดรูปภาพโปรไฟล์
   Future<void> _pickImage(ImageSource source) async {
     final pickedFile = await ImagePicker().pickImage(source: source);
 
@@ -175,47 +218,37 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
         _latitudeController.text = pickedLocation.latitude.toString();
         _longitudeController.text = pickedLocation.longitude.toString();
       });
+
+      // ใช้ Geocoding API เพื่อดึงข้อมูลที่อยู่
+      _getAddressFromCoordinates(
+          pickedLocation.latitude, pickedLocation.longitude);
     }
   }
 
-  Future<void> _updateProfile() async {
-    if (_nameController.text.isEmpty ||
-        _emailController.text.isEmpty ||
-        _addressController.text.isEmpty) {
-      _showSnackBar('Please fill in all the fields');
-      return;
-    }
+  Future<void> _getAddressFromCoordinates(
+      double latitude, double longitude) async {
+    final apiKey =
+        'AIzaSyAijDTG6loIcfDwQyU94VTK0ru1-55OylI'; // ใส่ API Key ของคุณ
+    final url = Uri.parse(
+        'https://maps.googleapis.com/maps/api/geocode/json?latlng=$latitude,$longitude&key=$apiKey');
 
-    if (_profileImage != null) {
-      await _uploadProfileImage(_profileImage!);
-    } else {
-      try {
-        var response = await http.post(
-          Uri.parse(
-              'http://10.5.50.82/tutoring_app/update_student_profile.php'),
-          body: {
-            'username': widget.userName,
-            'name': _nameController.text,
-            'email': _emailController.text,
-            'address': _addressController.text,
-            'latitude': _latitudeController.text,
-            'longitude': _longitudeController.text,
-          },
-        );
-
-        var jsonData = json.decode(response.body);
-        if (jsonData['status'] == 'success') {
-          _showSnackBar('Profile updated successfully');
-          widget.onProfileUpdated();
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['status'] == 'OK') {
+          final address = data['results'][0]['formatted_address'];
           setState(() {
-            _isEditing = false;
+            _addressController.text = address; // แสดงที่อยู่ที่ได้จาก API
           });
         } else {
-          _showSnackBar('Failed to update profile: ${jsonData['message']}');
+          _showSnackBar('ไม่สามารถค้นหาที่อยู่ได้');
         }
-      } catch (e) {
-        _showSnackBar('Error updating profile: $e');
+      } else {
+        _showSnackBar('เกิดข้อผิดพลาดในการเชื่อมต่อกับ Geocoding API');
       }
+    } catch (e) {
+      _showSnackBar('Error: $e');
     }
   }
 
@@ -335,10 +368,10 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                               'Email', _emailController, Icons.email),
                           _buildEditableProfileCard(
                               'Address', _addressController, Icons.home),
-                          _buildEditableProfileCard('Latitude',
-                              _latitudeController, Icons.location_on),
-                          _buildEditableProfileCard('Longitude',
-                              _longitudeController, Icons.location_on),
+                          // _buildEditableProfileCard('Latitude',
+                          //     _latitudeController, Icons.location_on),
+                          // _buildEditableProfileCard('Longitude',
+                          //     _longitudeController, Icons.location_on),
                           if (_isEditing)
                             Center(
                               child: ElevatedButton.icon(

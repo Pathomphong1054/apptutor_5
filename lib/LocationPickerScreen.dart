@@ -29,11 +29,16 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
       Position position = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.high);
       LatLng currentPosition = LatLng(position.latitude, position.longitude);
-      setState(() {
-        _initialPosition = currentPosition;
-        _selectedLocation = currentPosition;
-        _isMapInitialized = true;
-      });
+
+      // ตรวจสอบว่า widget ยังคง mounted อยู่หรือไม่ก่อนที่จะเรียก setState
+      if (mounted) {
+        setState(() {
+          _initialPosition = currentPosition;
+          _selectedLocation = currentPosition;
+          _isMapInitialized = true;
+        });
+      }
+
       _mapController?.animateCamera(
         CameraUpdate.newCameraPosition(
           CameraPosition(target: currentPosition, zoom: 15),
@@ -41,9 +46,13 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
       );
     } catch (e) {
       print("Error getting location: $e");
-      setState(() {
-        _isMapInitialized = true;
-      });
+
+      // ตรวจสอบว่า widget ยังคง mounted อยู่หรือไม่ก่อนที่จะเรียก setState
+      if (mounted) {
+        setState(() {
+          _isMapInitialized = true;
+        });
+      }
     }
   }
 

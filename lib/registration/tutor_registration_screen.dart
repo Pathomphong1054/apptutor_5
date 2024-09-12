@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../home_pagetutor.dart';
+import '../LocationPickerScreen.dart'; // นำเข้าหน้าจอเลือกแผนที่
 
 class TutorRegistrationScreen extends StatefulWidget {
   @override
@@ -18,17 +20,16 @@ class _TutorRegistrationScreenState extends State<TutorRegistrationScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
-  final TextEditingController _bankNameController = TextEditingController();
-  final TextEditingController _accountNumberController =
-      TextEditingController();
-  final TextEditingController _accountNameController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _latitudeController = TextEditingController();
+  final TextEditingController _longitudeController = TextEditingController();
 
   String? _selectedEducationLevel =
       'ประถม1-3'; // Default selected education level
   String? _selectedCategory = 'Language';
   String? _selectedSubject;
   String? _selectedTopic;
-  String _selectedProvince = 'Bangkok';
+  String _selectedProvince = 'Bangkok'; // Default province
   File? _profileImage;
   File? _resumeFile;
 
@@ -176,6 +177,58 @@ class _TutorRegistrationScreenState extends State<TutorRegistrationScreen> {
     'Yoga': ['Poses', 'Breathing Techniques', 'Meditation', 'Philosophy'],
     'Martial Arts': ['Techniques', 'Styles', 'Training', 'History'],
   };
+  Future<void> _getAddressFromCoordinates(
+      double latitude, double longitude) async {
+    final apiKey =
+        'AIzaSyAijDTG6loIcfDwQyU94VTK0ru1-55OylI'; // ใส่ API Key ของคุณ
+    final url = Uri.parse(
+        'https://maps.googleapis.com/maps/api/geocode/json?latlng=$latitude,$longitude&key=$apiKey');
+
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['status'] == 'OK') {
+          final address = data['results'][0]['formatted_address'];
+
+          // อัปเดต TextField ที่แสดงที่อยู่ด้วยที่อยู่ที่ได้จาก API
+          setState(() {
+            _addressController.text = address;
+          });
+        }
+      }
+    } catch (e) {
+      print("Error getting address: $e");
+    }
+  }
+
+  // Method for map picker
+  Future<void> _openMapPicker() async {
+    LatLng initialLocation = LatLng(
+      13.7563, // Default latitude for Bangkok
+      100.5018, // Default longitude for Bangkok
+    );
+
+    LatLng? pickedLocation = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LocationPickerScreen(
+          initialLocation: initialLocation,
+        ),
+      ),
+    );
+
+    if (pickedLocation != null) {
+      setState(() {
+        _latitudeController.text = pickedLocation.latitude.toString();
+        _longitudeController.text = pickedLocation.longitude.toString();
+      });
+
+      // เรียกใช้ฟังก์ชันเพื่อแปลงพิกัดเป็นที่อยู่
+      await _getAddressFromCoordinates(
+          pickedLocation.latitude, pickedLocation.longitude);
+    }
+  }
 
   Future<void> registerTutor(BuildContext context) async {
     final String name = _nameController.text;
@@ -185,11 +238,18 @@ class _TutorRegistrationScreenState extends State<TutorRegistrationScreen> {
     final String category = _selectedCategory!;
     final String subject = _selectedSubject!;
     final String topic = _selectedTopic!;
-    final String address = _selectedProvince;
+    final String address = _addressController.text; // ใช้ที่อยู่จากแผนที่
+    final String latitude = _latitudeController.text; // ใช้พิกัดละติจูด
+    final String longitude = _longitudeController.text; // ใช้พิกัดลองจิจูด
     final String educationLevel = _selectedEducationLevel!;
-    final String bankName = _bankNameController.text;
-    final String accountNumber = _accountNumberController.text;
-    final String accountName = _accountNameController.text;
+
+    // ตรวจสอบว่าได้เลือกที่อยู่หรือยัง
+    if (address.isEmpty || latitude.isEmpty || longitude.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please select an address')),
+      );
+      return;
+    }
 
     if (password != confirmPassword) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -209,10 +269,9 @@ class _TutorRegistrationScreenState extends State<TutorRegistrationScreen> {
     request.fields['subject'] = subject;
     request.fields['topic'] = topic;
     request.fields['address'] = address;
+    request.fields['latitude'] = latitude; // ส่งพิกัดละติจูดไปเซิร์ฟเวอร์
+    request.fields['longitude'] = longitude; // ส่งพิกัดลองจิจูดไปเซิร์ฟเวอร์
     request.fields['education_level'] = educationLevel;
-    request.fields['bank_name'] = bankName;
-    request.fields['account_number'] = accountNumber;
-    request.fields['account_name'] = accountName;
 
     if (_profileImage != null) {
       request.files.add(
@@ -259,6 +318,7 @@ class _TutorRegistrationScreenState extends State<TutorRegistrationScreen> {
                 recipientImage: '',
                 currentUserImage: '',
                 tutorId: '',
+                userImageUrl: '',
               ),
             ),
           );
@@ -542,103 +602,33 @@ class _TutorRegistrationScreenState extends State<TutorRegistrationScreen> {
                     ),
                   ),
                   SizedBox(height: 10),
-                  DropdownButtonFormField<String>(
-                    value: _selectedProvince,
-                    onChanged: (newValue) {
-                      setState(() {
-                        _selectedProvince = newValue!;
-                      });
-                    },
-                    items: <String>[
-                      'Bangkok',
-                      'Krabi',
-                      'Kanchanaburi',
-                      'Kalasin',
-                      'Kamphaeng Phet',
-                      'Khon Kaen',
-                      'Chanthaburi',
-                      'Chachoengsao',
-                      'Chon Buri',
-                      'Chai Nat',
-                      'Chaiyaphum',
-                      'Chumphon',
-                      'Chiang Mai',
-                      'Chiang Rai',
-                      'Trang',
-                      'Trat',
-                      'Tak',
-                      'Nakhon Nayok',
-                      'Nakhon Pathom',
-                      'Nakhon Phanom',
-                      'Nakhon Ratchasima',
-                      'Nakhon Si Thammarat',
-                      'Nakhon Sawan',
-                      'Nonthaburi',
-                      'Narathiwat',
-                      'Nan',
-                      'Bueng Kan',
-                      'Buriram',
-                      'Pathum Thani',
-                      'Prachuap Khiri Khan',
-                      'Prachinburi',
-                      'Pattani',
-                      'Phra Nakhon Si Ayutthaya',
-                      'Phang Nga',
-                      'Phatthalung',
-                      'Phichit',
-                      'Phitsanulok',
-                      'Phetchaburi',
-                      'Phetchabun',
-                      'Phuket',
-                      'Maha Sarakham',
-                      'Mukdahan',
-                      'Mae Hong Son',
-                      'Yasothon',
-                      'Yala',
-                      'Roi Et',
-                      'Ranong',
-                      'Rayong',
-                      'Lopburi',
-                      'Lampang',
-                      'Lamphun',
-                      'Loei',
-                      'Si Sa Ket',
-                      'Sakon Nakhon',
-                      'Songkhla',
-                      'Satun',
-                      'Samut Prakan',
-                      'Samut Sakhon',
-                      'Samut Songkhram',
-                      'Saraburi',
-                      'Sing Buri',
-                      'Sukhothai',
-                      'Suphan Buri',
-                      'Surat Thani',
-                      'Surin',
-                      'Nong Khai',
-                      'Nong Bua Lamphu',
-                      'Amnat Charoen',
-                      'Udon Thani',
-                      'Uttaradit',
-                      'Uthai Thani',
-                      'Ubon Ratchathani',
-                    ].map<DropdownMenuItem<String>>((dynamic value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
-                    decoration: InputDecoration(
-                      labelText: 'Province',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(30),
-                        borderSide: BorderSide(
-                          color: Colors.black, // สีดำสำหรับขอบ
+                  GestureDetector(
+                    onTap: _openMapPicker, // เปิดหน้าแผนที่เมื่อคลิก
+                    child: InputDecorator(
+                      decoration: InputDecoration(
+                        labelText: 'Address', // เปลี่ยนชื่อ label ให้ชัดเจน
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30),
+                          borderSide: BorderSide(
+                            color: Colors.black, // สีดำสำหรับขอบ
+                          ),
+                        ),
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.9),
+                        prefixIcon:
+                            Icon(Icons.location_city, color: Colors.grey),
+                      ),
+                      child: Text(
+                        _addressController.text.isNotEmpty
+                            ? _addressController
+                                .text // ถ้ามีที่อยู่ให้แสดงที่อยู่
+                            : 'Select Address', // ถ้ายังไม่มีให้แสดงข้อความนี้
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.black87,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                      filled: true,
-                      fillColor: Colors.white.withOpacity(0.9),
-                      prefixIcon: Icon(Icons.location_city, color: Colors.grey),
                     ),
                   ),
                   SizedBox(height: 20),

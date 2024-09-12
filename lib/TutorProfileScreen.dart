@@ -17,7 +17,7 @@ class TutorProfileScreen extends StatefulWidget {
   final VoidCallback? onProfileUpdated;
   final bool canEdit;
   final String currentUser;
-   final String currentUserImage;
+  final String currentUserImage;
   final String idUser;
 
   const TutorProfileScreen({
@@ -29,10 +29,10 @@ class TutorProfileScreen extends StatefulWidget {
     this.onProfileUpdated,
     this.canEdit = false,
     required this.currentUser,
-     required this.currentUserImage,
-    required String username,
-    required String profileImageUrl,
+    required this.currentUserImage,
     required this.idUser,
+    required username,
+    required String profileImageUrl,
     required String recipientImage,
   }) : super(key: key);
 
@@ -129,7 +129,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
     LatLng initialLocation = LatLng(
       double.parse(_latitudeController.text.isNotEmpty
           ? _latitudeController.text
-          : '13.7563'),
+          : '13.7563'), // Default location if empty
       double.parse(_longitudeController.text.isNotEmpty
           ? _longitudeController.text
           : '100.5018'),
@@ -145,13 +145,43 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
     );
 
     if (pickedLocation != null) {
-      if (mounted) {
-        setState(() {
-          _latitudeController.text = pickedLocation.latitude.toString();
-          _longitudeController.text = pickedLocation.longitude.toString();
-        });
+      setState(() {
+        _latitudeController.text = pickedLocation.latitude.toString();
+        _longitudeController.text = pickedLocation.longitude.toString();
+      });
+
+      // หลังจากเลือกพิกัดใหม่แล้ว ให้เรียกใช้ฟังก์ชันนี้เพื่ออัปเดตที่อยู่
+      _getAddressFromCoordinates(
+          pickedLocation.latitude, pickedLocation.longitude);
+    }
+  }
+
+  Future<void> _getAddressFromCoordinates(
+      double latitude, double longitude) async {
+    final apiKey =
+        'AIzaSyAijDTG6loIcfDwQyU94VTK0ru1-55OylI'; // ใส่ API Key ของคุณ
+    final url = Uri.parse(
+        'https://maps.googleapis.com/maps/api/geocode/json?latlng=$latitude,$longitude&key=$apiKey');
+
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['status'] == 'OK') {
+          final address = data['results'][0]['formatted_address'];
+
+          // อัปเดต TextField ที่แสดงที่อยู่ด้วยที่อยู่ที่ได้จาก API
+          setState(() {
+            _addressController.text = address;
+          });
+        } else {
+          _showSnackBar('ไม่สามารถค้นหาที่อยู่ได้');
+        }
+      } else {
+        _showSnackBar('เกิดข้อผิดพลาดในการเชื่อมต่อกับ Geocoding API');
       }
-      _calculateAndSetDistance();
+    } catch (e) {
+      _showSnackBar('Error: $e');
     }
   }
 
@@ -661,8 +691,52 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                           _buildProfileFieldWithLabel(
                               'Email', _emailController),
                           SizedBox(height: 10),
-                          _buildProfileFieldWithLabel(
-                              'Address', _addressController),
+                          Container(
+                            padding: const EdgeInsets.all(
+                                12.0), // เพิ่ม padding รอบๆ ฟิลด์
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.5),
+                                  spreadRadius: 2,
+                                  blurRadius: 5,
+                                  offset: Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Address',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.blue[800],
+                                  ),
+                                ),
+                                SizedBox(height: 8.0),
+                                TextField(
+                                  controller: _addressController,
+                                  enabled: _isEditing, // เปิดการแก้ไข
+                                  maxLines:
+                                      null, // เพิ่มความสูงของ TextField ตามเนื้อหาที่อยู่
+                                  decoration: InputDecoration(
+                                    border: InputBorder.none,
+                                    isDense: true,
+                                    contentPadding: EdgeInsets.symmetric(
+                                        vertical: 10), // เพิ่มพื้นที่ภายใน
+                                  ),
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                           SizedBox(height: 10),
                           _buildProfileFieldWithLabel(
                               'Education Level', _educationLevelController),
@@ -732,10 +806,10 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
   Widget _buildLocationFields() {
     return Column(
       children: [
-        _buildProfileFieldWithLabel('Latitude', _latitudeController),
-        SizedBox(height: 10),
-        _buildProfileFieldWithLabel('Longitude', _longitudeController),
-        SizedBox(height: 10),
+        // _buildProfileFieldWithLabel('Latitude', _latitudeController),
+        // SizedBox(height: 10),
+        // _buildProfileFieldWithLabel('Longitude', _longitudeController),
+        // SizedBox(height: 10),
         if (widget.canEdit && _isEditing)
           Center(
             child: ElevatedButton.icon(
@@ -820,51 +894,56 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Add Review',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          SizedBox(height: 10),
-          Row(
-            children: List.generate(5, (index) {
-              return IconButton(
-                icon: Icon(
-                  Icons.star,
-                  color: index < _rating ? Colors.yellow[700] : Colors.grey,
-                ),
-                onPressed: () {
-                  if (mounted) {
-                    setState(() {
-                      _rating = index + 1;
-                    });
-                  }
-                },
-              );
-            }),
-          ),
-          TextField(
-            controller: _commentController,
-            maxLines: 3,
-            decoration: InputDecoration(
-              border: OutlineInputBorder(),
-              labelText: 'Comment',
-            ),
-          ),
-          SizedBox(height: 10),
-          Center(
-            child: ElevatedButton(
-              onPressed: _addReview,
-              child: Text('Submit Review'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue[800],
-                foregroundColor: Colors.white,
+          // ตรวจสอบว่า ผู้ใช้ที่กำลังดูโปรไฟล์ไม่ใช่ติวเตอร์เจ้าของโปรไฟล์
+          if (widget.currentUser != widget.userName) ...[
+            Text(
+              'Add Review',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
               ),
             ),
-          ),
-          SizedBox(height: 20),
+            SizedBox(height: 10),
+            Row(
+              children: List.generate(5, (index) {
+                return IconButton(
+                  icon: Icon(
+                    Icons.star,
+                    color: index < _rating ? Colors.yellow[700] : Colors.grey,
+                  ),
+                  onPressed: () {
+                    if (mounted) {
+                      setState(() {
+                        _rating = index + 1;
+                      });
+                    }
+                  },
+                );
+              }),
+            ),
+            TextField(
+              controller: _commentController,
+              maxLines: 3,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: 'Comment',
+              ),
+            ),
+            SizedBox(height: 10),
+            Center(
+              child: ElevatedButton(
+                onPressed: _addReview,
+                child: Text('Submit Review'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue[800],
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ),
+            SizedBox(height: 20),
+          ],
+
+          // ส่วนแสดงรีวิวที่ผู้ใช้งานทุกคนจะเห็น
           Text(
             'Reviews',
             style: TextStyle(

@@ -9,6 +9,7 @@ class TutorSchedule extends StatefulWidget {
   final String currentUserImage; //ไม่มี
   final String profileImageUrl; // รูปติวเตอร์
   final String recipientImage; //รูปติวเตอร์
+  final String userImageUrl; //ชื่อติวเตอร์
 
   TutorSchedule(
       {required this.tutorName,
@@ -17,7 +18,8 @@ class TutorSchedule extends StatefulWidget {
       required this.currentUserImage,
       required this.profileImageUrl,
       required this.recipientImage,
-      required String currentUserRole});
+      required String currentUserRole,
+      required this.userImageUrl});
 
   @override
   _TutorScheduleState createState() => _TutorScheduleState();
@@ -154,8 +156,8 @@ class _TutorScheduleState extends State<TutorSchedule> {
                                   // recipientImage: widget.recipientImage,
                                   // profileImageUrl: widget.profileImageUrl,
                                   backgroundImage: widget
-                                          .currentUserImage.isNotEmpty
-                                      ? NetworkImage(widget.currentUserImage)
+                                          .userImageUrl.isNotEmpty
+                                      ? NetworkImage(widget.userImageUrl)
                                       : AssetImage('images/default_profile.jpg')
                                           as ImageProvider,
                                   radius: 20,

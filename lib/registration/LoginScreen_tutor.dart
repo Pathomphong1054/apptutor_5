@@ -59,7 +59,7 @@ class _LoginScreenTutorState extends State<LoginScreenTutor> {
               tutorName: '',
               recipientImage: '',
               currentUserImage: '',
-              tutorId: '',
+              tutorId: '', userImageUrl: '',
             ),
           ),
         );

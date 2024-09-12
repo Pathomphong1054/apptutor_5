@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:apptutor_2/SettingsScreen.dart';
+import 'package:apptutor_2/StudentPostsScreen.dart';
 import 'package:apptutor_2/TutorSchedule.dart';
 import 'package:apptutor_2/VariableDebugScreen.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +18,7 @@ import 'TutorProfileScreen.dart';
 import 'notification_screen.dart';
 import 'favoritestudent.dart';
 import 'favoritetutor.dart';
+import 'package:intl/intl.dart';
 
 class HomePage2 extends StatefulWidget {
   final String userName;
@@ -28,6 +30,7 @@ class HomePage2 extends StatefulWidget {
   final String recipientImage;
   final String currentUserImage;
   final String tutorId;
+  final String userImageUrl;
 
   const HomePage2({
     Key? key,
@@ -39,7 +42,7 @@ class HomePage2 extends StatefulWidget {
     required this.tutorName,
     required this.recipientImage,
     required this.currentUserImage,
-    required this.tutorId,
+    required this.tutorId, required this.userImageUrl,
   }) : super(key: key);
 
   @override
@@ -591,7 +594,7 @@ class _HomePage2State extends State<HomePage2>
                             tutorId: '',
                             recipientImage: widget.recipientImage,
                             profileImageUrl: widget.profileImageUrl,
-                            currentUserRole: '',
+                            currentUserRole: '', userImageUrl: widget.userImageUrl,
                           )
                       // builder: (context) => VariableCheckScreen(
                       //       tutorName: widget.tutorName,
@@ -611,6 +614,21 @@ class _HomePage2State extends State<HomePage2>
                       //       tutorImage: '',
                       //     )
                       ),
+                );
+              },
+            ),
+          if (widget.userRole == 'student')
+            ListTile(
+              leading: Icon(Icons.post_add, color: Colors.blueAccent),
+              title: Text('Post', style: TextStyle(fontSize: 18)),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => StudentPostsScreen(
+                      userName: widget.userName,
+                    ),
+                  ),
                 );
               },
             ),
@@ -830,9 +848,9 @@ class _HomePage2State extends State<HomePage2>
             child: Text(
               'Welcome, ${_userName}!',
               style: TextStyle(
-                  fontSize: 20,
+                  fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black),
+                  color: Colors.black87),
             ),
           ),
         ),
@@ -886,18 +904,25 @@ class _HomePage2State extends State<HomePage2>
   }
 
   Widget _buildMessageCard(
-      String userName,
-      String userImageUrl,
-      String messageText,
-      String location,
-      String subject,
-      String dateTime,
-      String sessionId) {
+    String userName,
+    String userImageUrl,
+    String messageText,
+    String location,
+    String subject,
+    String dateTime,
+    String sessionId,
+  ) {
+    // แปลงฟอร์แมตวันเวลาให้ดูสวยงาม
+    String formattedDateTime = _formatDateTime(dateTime);
+
     return Card(
-      color: Colors.white.withOpacity(0.8),
-      margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+      margin: EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+      elevation: 5,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(12.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -913,21 +938,64 @@ class _HomePage2State extends State<HomePage2>
                   radius: 30,
                 ),
               ),
-              title: Text(userName,
-                  style: TextStyle(color: Colors.black, fontSize: 18)),
-              subtitle: Text(messageText,
-                  style: TextStyle(color: Colors.black, fontSize: 16)),
+              title: Text(
+                userName,
+                style: TextStyle(
+                  color: Colors.black87,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              subtitle: Text(
+                messageText,
+                style: TextStyle(
+                  color: Colors.grey[700],
+                  fontSize: 16,
+                  height: 1.4,
+                ),
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-            SizedBox(height: 8.0),
-            Divider(color: Colors.grey),
-            SizedBox(height: 8.0),
-            Text('Location: $location',
-                style: TextStyle(color: Colors.black, fontSize: 14)),
-            Text('Subject: $subject',
-                style: TextStyle(color: Colors.black, fontSize: 14)),
-            Text('Date and Time: $dateTime',
-                style: TextStyle(color: Colors.black, fontSize: 14)),
-            SizedBox(height: 12.0),
+            SizedBox(height: 10),
+            Divider(color: Colors.grey[300]),
+            SizedBox(height: 10),
+            Row(
+              children: [
+                Icon(Icons.location_on, color: Colors.redAccent, size: 18),
+                SizedBox(width: 5),
+                Text(
+                  location,
+                  style: TextStyle(
+                    color: Colors.grey[800],
+                    fontSize: 14,
+                  ),
+                ),
+                SizedBox(width: 20),
+                Icon(Icons.book, color: Colors.green, size: 18),
+                SizedBox(width: 5),
+                Text(
+                  subject,
+                  style: TextStyle(
+                    color: Colors.grey[800],
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 10),
+            Align(
+              alignment: Alignment.bottomRight,
+              child: Text(
+                formattedDateTime, // แสดงวันที่ที่ถูกฟอร์แมต
+                style: TextStyle(
+                  fontSize: 14, // ขยายฟอนต์ให้ดูดีขึ้น
+                  color: Colors.blueGrey, // ใช้สีที่อ่านง่ายและสวยงาม
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ),
+            SizedBox(height: 15),
             Align(
               alignment: Alignment.centerRight,
               child: ElevatedButton.icon(
@@ -937,7 +1005,11 @@ class _HomePage2State extends State<HomePage2>
                 icon: Icon(Icons.send),
                 label: Text('Send Request'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  backgroundColor: Colors.blue[800],
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
             ),
@@ -945,6 +1017,18 @@ class _HomePage2State extends State<HomePage2>
         ),
       ),
     );
+  }
+
+// ฟังก์ชันฟอร์แมตวันเวลา
+  String _formatDateTime(String dateTime) {
+    try {
+      final parsedDate = DateTime.parse(dateTime);
+      final formattedDate =
+          DateFormat('EEEE, MMM d, yyyy, h:mm a').format(parsedDate);
+      return formattedDate;
+    } catch (e) {
+      return dateTime; // ถ้าแปลงไม่ได้ ให้ใช้ข้อความเดิม
+    }
   }
 
   Widget _buildBottomNavigationBar() {
