@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:apptutor_2/SettingsScreen.dart';
+import 'package:apptutor_2/TutorSchedule.dart';
+import 'package:apptutor_2/VariableDebugScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -23,8 +25,9 @@ class HomePage2 extends StatefulWidget {
   final String currentUserRole;
   final String idUser;
   final String tutorName;
-   final String recipientImage;
-
+  final String recipientImage;
+  final String currentUserImage;
+  final String tutorId;
 
   const HomePage2({
     Key? key,
@@ -33,7 +36,10 @@ class HomePage2 extends StatefulWidget {
     required this.profileImageUrl,
     required this.currentUserRole,
     required this.idUser,
-    required this.tutorName, required this.recipientImage,
+    required this.tutorName,
+    required this.recipientImage,
+    required this.currentUserImage,
+    required this.tutorId,
   }) : super(key: key);
 
   @override
@@ -245,7 +251,8 @@ class _HomePage2State extends State<HomePage2>
           currentUserRole: widget.userRole,
           idUser: widget.idUser,
           userId: widget.idUser,
-          tutorId: tutorId, 
+          tutorId: tutorId,
+          profileImageUrl: widget.profileImageUrl,
         ),
       ),
     );
@@ -300,12 +307,13 @@ class _HomePage2State extends State<HomePage2>
                 profileImageUrl: _profileImageUrl ?? '',
                 username: '',
                 idUser: widget.idUser,
+                recipientImage: widget.recipientImage,
               )
             : StudentProfileScreen(
                 userName: userName,
                 onProfileUpdated: _onProfileUpdated,
                 userRole: 'student',
-              ),
+                profileImageUrl: widget.profileImageUrl),
       ),
     );
   }
@@ -325,19 +333,37 @@ class _HomePage2State extends State<HomePage2>
       case 0:
         break;
       case 1:
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ChatListScreen(
-              currentUser: widget.userName,
-              currentUserImage: widget.profileImageUrl,
-              currentUserRole: widget.userRole,
-              idUser: widget.idUser,
-              recipientImage: widget.recipientImage
+        if (widget.userRole == 'student') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ChatListScreen(
+                currentUser: widget.userName,
+                currentUserImage: widget.currentUserImage, // รูปของนักเรียน
+                currentUserRole: widget.userRole,
+                idUser: widget.idUser,
+                recipientImage: widget.recipientImage, // รูปของติวเตอร์
+                profileImageUrl: widget.profileImageUrl,
+              ),
             ),
-          ),
-        );
+          );
+        } else if (widget.userRole == 'Tutor') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ChatListScreen(
+                currentUser: widget.userName,
+                currentUserImage: widget.currentUserImage, // รูปของติวเตอร์
+                currentUserRole: widget.userRole,
+                idUser: widget.idUser,
+                recipientImage: widget.recipientImage, // รูปของนักเรียน
+                profileImageUrl: widget.profileImageUrl,
+              ),
+            ),
+          );
+        }
         break;
+
       case 2:
         if (widget.userRole == 'student') {
           Navigator.push(
@@ -348,6 +374,7 @@ class _HomePage2State extends State<HomePage2>
                 userId: widget.idUser,
                 currentUserImage: '',
                 idUser: widget.idUser,
+                recipientImage: widget.recipientImage,
               ),
             ),
           );
@@ -373,6 +400,8 @@ class _HomePage2State extends State<HomePage2>
                 userName: widget.userName,
                 userRole: widget.userRole,
                 idUser: widget.idUser,
+                profileImageUrl: widget.profileImageUrl,
+                recipientImage: widget.recipientImage,
               ),
             ),
           );
@@ -402,6 +431,8 @@ class _HomePage2State extends State<HomePage2>
               userName: widget.userName,
               userRole: widget.userRole,
               idUser: widget.idUser,
+              profileImageUrl: widget.profileImageUrl,
+              currentUserImage: widget.currentUserImage,
             ),
           ),
         );
@@ -470,6 +501,7 @@ class _HomePage2State extends State<HomePage2>
                             userName: _userName!,
                             onProfileUpdated: _onProfileUpdated,
                             userRole: 'student',
+                            profileImageUrl: widget.profileImageUrl,
                           )
                         : TutorProfileScreen(
                             userName: _userName!,
@@ -483,6 +515,7 @@ class _HomePage2State extends State<HomePage2>
                             userId: widget.idUser,
                             tutorId: tutorId,
                             idUser: widget.idUser,
+                            recipientImage: widget.recipientImage,
                           ),
                   ),
                 );
@@ -546,8 +579,40 @@ class _HomePage2State extends State<HomePage2>
           if (widget.userRole == 'Tutor')
             ListTile(
               leading: Icon(Icons.class_, color: Colors.blueAccent),
-              title: Text('My Class', style: TextStyle(fontSize: 18)),
-              onTap: () {},
+              title: Text('TutorSchedule', style: TextStyle(fontSize: 18)),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => TutorSchedule(
+                            userName: widget.userName,
+                            tutorName: '',
+                            currentUserImage: widget.currentUserImage,
+                            tutorId: '',
+                            recipientImage: widget.recipientImage,
+                            profileImageUrl: widget.profileImageUrl,
+                            currentUserRole: '',
+                          )
+                      // builder: (context) => VariableCheckScreen(
+                      //       tutorName: widget.tutorName,
+                      //       tutorId: widget.tutorId,
+                      //       idUser: widget.idUser,
+                      //       // idUser: wuserId,
+                      //       userName: widget.userName,
+                      //       userRole: widget.userRole,
+                      //       currentUser: widget.userName,
+                      //       currentUserImage: widget.profileImageUrl,
+                      //       userId: widget.idUser,
+
+                      //       profileImageUrl: _profileImageUrl ?? '',
+                      //       username: '',
+
+                      //       recipientImage: widget.recipientImage,
+                      //       tutorImage: '',
+                      //     )
+                      ),
+                );
+              },
             ),
           ListTile(
             leading: Icon(Icons.logout, color: Colors.blueAccent),
@@ -631,6 +696,7 @@ class _HomePage2State extends State<HomePage2>
               userRole: widget.userRole,
               profileImageUrl: widget.profileImageUrl,
               idUser: widget.idUser,
+              recipientImage: widget.recipientImage,
             ),
           ),
         );
@@ -705,6 +771,7 @@ class _HomePage2State extends State<HomePage2>
                                 profileImageUrl: profileImageUrl,
                                 username: name,
                                 idUser: widget.idUser,
+                                recipientImage: widget.recipientImage,
                               ),
                             ),
                           );

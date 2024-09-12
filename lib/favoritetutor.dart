@@ -14,6 +14,7 @@ class FavoriteTutorsScreen extends StatefulWidget {
     required this.userId,
     required this.currentUserImage,
     required this.idUser,
+    required String recipientImage,
   });
 
   @override
@@ -162,6 +163,7 @@ class _FavoriteTutorsScreenState extends State<FavoriteTutorsScreen> {
                                         profileImageUrl:
                                             tutor['profile_images'] ?? '',
                                         idUser: widget.idUser,
+                                        recipientImage: '',
                                       ),
                                     ),
                                   );

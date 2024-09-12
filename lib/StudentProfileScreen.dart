@@ -16,6 +16,7 @@ class StudentProfileScreen extends StatefulWidget {
     required this.userName,
     required this.onProfileUpdated,
     required this.userRole,
+    required String profileImageUrl,
   }) : super(key: key);
 
   @override

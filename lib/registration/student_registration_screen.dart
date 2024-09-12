@@ -354,8 +354,10 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
                   'http://10.5.50.82/tutoring_app/uploads/$profileImageUrl',
               currentUserRole: 'student',
               idUser: '',
-              tutorName: '', recipientImage: '',
-             
+              tutorName: '',
+              recipientImage: '',
+              currentUserImage: '',
+              tutorId: '',
             ),
           ),
         );

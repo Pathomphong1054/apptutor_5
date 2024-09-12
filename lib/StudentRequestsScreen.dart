@@ -7,9 +7,14 @@ import 'dart:convert';
 class StudentRequestsScreen extends StatefulWidget {
   final String userName;
   final String idUser;
+  final String profileImageUrl;
 
   StudentRequestsScreen(
-      {required this.userName, required String userRole, required this.idUser});
+      {required this.userName,
+      required String userRole,
+      required this.idUser,
+      required this.profileImageUrl,
+      required String recipientImage});
 
   @override
   _StudentRequestsScreenState createState() => _StudentRequestsScreenState();
@@ -146,7 +151,7 @@ class _StudentRequestsScreenState extends State<StudentRequestsScreen> {
           currentUserRole: 'student',
           idUser: widget.idUser,
           userId: widget.idUser,
-          tutorId: tutorId,  // Adjust this based on the user's role
+          tutorId: tutorId, profileImageUrl: widget.profileImageUrl,
         ),
       ),
     );
@@ -168,7 +173,7 @@ class _StudentRequestsScreenState extends State<StudentRequestsScreen> {
           profileImageUrl: tutorProfileImage,
           userId: widget.idUser,
           tutorId: tutorId,
-          idUser: widget.idUser,
+          idUser: widget.idUser, recipientImage: '',
         ),
       ),
     );

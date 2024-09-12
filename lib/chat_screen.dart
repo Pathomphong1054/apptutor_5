@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:apptutor_2/MapScreen.dart';
 import 'package:apptutor_2/StudentProfileScreen.dart';
 import 'package:apptutor_2/TutorProfileScreen.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
@@ -17,6 +19,7 @@ class ChatScreen extends StatefulWidget {
   final String sessionId;
   final String currentUserRole;
   final String idUser;
+  final String profileImageUrl;
 
   const ChatScreen({
     required this.currentUser,
@@ -28,6 +31,7 @@ class ChatScreen extends StatefulWidget {
     required this.idUser,
     required String userId,
     required String tutorId,
+    required this.profileImageUrl,
   });
 
   @override
@@ -42,12 +46,11 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isLoading = true;
   String? _errorMessage;
   final ImagePicker _picker = ImagePicker();
+  String? _responseStatus;
 
   @override
   void initState() {
     super.initState();
-    print("Recipient Image URL: ${widget.recipientImage}");
-    print("Current User Image URL: ${widget.currentUserImage}");
     _loadMessages();
   }
 
@@ -62,17 +65,19 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _fetchMessages() async {
     try {
       final response = await http.get(Uri.parse(
-          'http://10.5.50.82/tutoring_app/fetch_chat.php?sender=${widget.currentUser}&recipient=${widget.recipient}'));
+          'http://10.5.50.82/tutoring_app/fetch_chat.php?sender=${widget.currentUser}&recipient=${widget.recipient}&session_id=${widget.sessionId}'));
+
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         if (responseData['status'] == 'success') {
           setState(() {
             _messages =
                 List<Map<String, dynamic>>.from(responseData['messages']);
-            _allMessages[widget.sessionId] = _messages;
+            _responseStatus =
+                responseData['response_status']; // Fetch response_status
             _isLoading = false;
           });
-          _scrollToBottom();
+          _scrollToBottom(); // Scroll to the latest message
         } else {
           throw Exception(
               'Failed to load messages: ${responseData['message']}');
@@ -115,44 +120,44 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _sendMessage() async {
     final message = _controller.text.trim();
     if (message.isNotEmpty) {
-      final response = await http.post(
-        Uri.parse('http://10.5.50.82/tutoring_app/send_message.php'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'sender': widget.currentUser,
-          'recipient': widget.recipient,
-          'message': message,
-          'session_id': widget.sessionId,
-        }),
-      );
+      try {
+        final response = await http.post(
+          Uri.parse('http://10.5.50.82/tutoring_app/send_message.php'),
+          headers: {'Content-Type': 'application/json'},
+          body: json.encode({
+            'sender': widget.currentUser,
+            'recipient': widget.recipient,
+            'message': message,
+            'session_id': widget.sessionId,
+          }),
+        );
 
-      if (response.statusCode == 200) {
-        final responseData = json.decode(response.body);
-        if (responseData['status'] == 'success') {
-          setState(() {
-            _messages.add({
-              'sender': widget.currentUser,
-              'recipient': widget.recipient,
-              'message': message,
-              'session_id': widget.sessionId,
+        if (response.statusCode == 200) {
+          final responseData = json.decode(response.body);
+          if (responseData['status'] == 'success') {
+            setState(() {
+              _messages.add({
+                'sender': widget.currentUser,
+                'recipient': widget.recipient,
+                'message': message,
+                'session_id': widget.sessionId,
+              });
+              _allMessages[widget.sessionId] = _messages;
+              _controller.clear();
             });
-            _allMessages[widget.sessionId] = _messages;
-            _controller.clear();
-          });
-          _scrollToBottom();
+            _scrollToBottom();
 
-          await createNotification(
-              widget.currentUser, widget.recipient, message, 'chat');
+            await createNotification(
+                widget.currentUser, widget.recipient, message, 'chat');
+          } else {
+            throw Exception(responseData['message']);
+          }
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content:
-                    Text('Failed to send message: ${responseData['message']}')),
-          );
+          throw Exception('Failed to send message');
         }
-      } else {
+      } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to send message')),
+          SnackBar(content: Text('Failed to send message: $e')),
         );
       }
     } else {
@@ -165,49 +170,47 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _sendMessageWithLocation(LatLng position) async {
     final message =
         'Location: Lat: ${position.latitude}, Lng: ${position.longitude}';
-    final response = await http.post(
-      Uri.parse('http://10.5.50.82/tutoring_app/send_message.php'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({
-        'sender': widget.currentUser,
-        'recipient': widget.recipient,
-        'message': message,
-        'latitude':
-            position.latitude.toString(), // ตรวจสอบให้แน่ใจว่าส่งค่าที่ถูกต้อง
-        'longitude':
-            position.longitude.toString(), // ตรวจสอบให้แน่ใจว่าส่งค่าที่ถูกต้อง
-        'session_id': widget.sessionId,
-      }),
-    );
+    try {
+      final response = await http.post(
+        Uri.parse('http://10.5.50.82/tutoring_app/send_message.php'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'sender': widget.currentUser,
+          'recipient': widget.recipient,
+          'message': message,
+          'latitude': position.latitude.toString(),
+          'longitude': position.longitude.toString(),
+          'session_id': widget.sessionId,
+        }),
+      );
 
-    if (response.statusCode == 200) {
-      final responseData = json.decode(response.body);
-      if (responseData['status'] == 'success') {
-        setState(() {
-          _messages.add({
-            'sender': widget.currentUser,
-            'recipient': widget.recipient,
-            'message': message,
-            'latitude': position.latitude.toString(),
-            'longitude': position.longitude.toString(),
-            'session_id': widget.sessionId,
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        if (responseData['status'] == 'success') {
+          setState(() {
+            _messages.add({
+              'sender': widget.currentUser,
+              'recipient': widget.recipient,
+              'message': message,
+              'latitude': position.latitude.toString(),
+              'longitude': position.longitude.toString(),
+              'session_id': widget.sessionId,
+            });
+            _allMessages[widget.sessionId] = _messages;
           });
-          _allMessages[widget.sessionId] = _messages;
-        });
-        _scrollToBottom();
+          _scrollToBottom();
 
-        await createNotification(
-            widget.currentUser, widget.recipient, message, 'location');
+          await createNotification(
+              widget.currentUser, widget.recipient, message, 'location');
+        } else {
+          throw Exception(responseData['message']);
+        }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content:
-                  Text('Failed to send location: ${responseData['message']}')),
-        );
+        throw Exception('Failed to send location');
       }
-    } else {
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to send location')),
+        SnackBar(content: Text('Failed to send location: $e')),
       );
     }
   }
@@ -241,16 +244,10 @@ class _ChatScreenState extends State<ChatScreen> {
         });
         _scrollToBottom();
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content:
-                  Text('Failed to send image: ${responseData['message']}')),
-        );
+        throw Exception(responseData['message']);
       }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to send image')),
-      );
+      throw Exception('Failed to send image');
     }
   }
 
@@ -258,18 +255,159 @@ class _ChatScreenState extends State<ChatScreen> {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       File image = File(pickedFile.path);
-      await _sendImage(image);
+      // แสดงรูป Preview ก่อนส่ง
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Preview Image'),
+          content: Image.file(image),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // ยกเลิกการส่ง
+              },
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _sendImage(image); // ส่งรูปเมื่อผู้ใช้ยืนยัน
+              },
+              child: Text('Send'),
+            ),
+          ],
+        ),
+      );
     }
   }
 
   void _scrollToBottom() {
-    if (_scrollController.hasClients) {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: Duration(milliseconds: 300),
-        curve: Curves.easeOut,
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
+  Future<void> _sendResponse(String responseStatus, int sessionId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('http://10.5.50.82/tutoring_app/update_response.php'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'session_id': sessionId,
+          'response_status': responseStatus,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+
+        if (responseData['status'] == 'success') {
+          setState(() {
+            _responseStatus = responseStatus; // อัปเดตสถานะใน UI
+            // อัปเดตสถานะการตอบรับของข้อความ
+            _messages = _messages.map((msg) {
+              if (msg['session_id'] == widget.sessionId) {
+                msg['isResponded'] = true; // ตั้งสถานะให้เป็นตอบรับแล้ว
+              }
+              return msg;
+            }).toList();
+          });
+
+          await _sendMessageToStudent(responseStatus);
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('การตอบกลับถูกบันทึกสำเร็จ')),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content:
+                    Text('การอัปเดตสถานะล้มเหลว: ${responseData['message']}')),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('การส่งสถานะล้มเหลว: ${response.reasonPhrase}')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('เกิดข้อผิดพลาด: $e')),
       );
     }
+  }
+
+  Future<void> _sendMessageToStudent(String responseStatus) async {
+    // เตรียมข้อความที่จะส่งไปยังนักเรียน
+    String message;
+    if (responseStatus == 'accepted') {
+      message = 'ติวเตอร์ตอบรับที่จะสอนแล้ว';
+    } else {
+      message = 'ติวเตอร์ปฏิเสธการสอน';
+    }
+
+    // เรียก API เพื่อส่งข้อความ
+    final response = await http.post(
+      Uri.parse('http://10.5.50.82/tutoring_app/send_message.php'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({
+        'sender': widget.currentUser, // ติวเตอร์ที่ส่งข้อความ
+        'recipient': widget.recipient, // นักเรียน
+        'message': message,
+        'session_id': widget.sessionId,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final responseData = json.decode(response.body);
+      if (responseData['status'] != 'success') {
+        // หากส่งข้อความไม่สำเร็จ แสดงข้อความแสดงข้อผิดพลาด
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content:
+                  Text('การส่งข้อความล้มเหลว: ${responseData['message']}')),
+        );
+      }
+    } else {
+      // แสดงข้อความหากมีข้อผิดพลาด
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('การส่งข้อความล้มเหลว: ${response.reasonPhrase}')),
+      );
+    }
+  }
+
+// สร้างปุ่มตกลง/ปฏิเสธที่จะแสดงตามสถานะการตอบรับ
+  Widget _buildResponseButtons(int index) {
+    // Hide buttons if already responded
+    if (_responseStatus == 'accepted' || _responseStatus == 'declined') {
+      return SizedBox.shrink(); // If already responded, don't show buttons
+    }
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        ElevatedButton(
+          onPressed: () =>
+              _sendResponse('accepted', int.parse(widget.sessionId)),
+          child: Text('ตกลง'),
+        ),
+        SizedBox(width: 10),
+        ElevatedButton(
+          onPressed: () =>
+              _sendResponse('declined', int.parse(widget.sessionId)),
+          child: Text('ปฏิเสธ'),
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+        ),
+      ],
+    );
   }
 
   void _viewProfile() {
@@ -282,6 +420,7 @@ class _ChatScreenState extends State<ChatScreen> {
               userName: widget.recipient,
               onProfileUpdated: () {},
               userRole: 'student',
+              profileImageUrl: widget.profileImageUrl,
             );
           } else {
             return TutorProfileScreen(
@@ -295,6 +434,7 @@ class _ChatScreenState extends State<ChatScreen> {
               userId: widget.idUser,
               tutorId: widget.idUser,
               idUser: widget.idUser,
+              recipientImage: widget.profileImageUrl,
             );
           }
         },
@@ -318,33 +458,25 @@ class _ChatScreenState extends State<ChatScreen> {
       MaterialPageRoute(
         builder: (context) => MapScreen(
           tutorName: widget.recipient,
-          initialPosition:
-              _getPreviousPosition(), // ฟังก์ชันดึงตำแหน่งก่อนหน้านี้
+          initialPosition: _getPreviousPosition(),
         ),
       ),
     );
 
     if (selectedPosition != null) {
-      await _sendMessageWithLocation(selectedPosition); // ส่งตำแหน่งไปยังแชท
-      _savePosition(
-          selectedPosition); // บันทึกตำแหน่งลงหน่วยความจำหรือฐานข้อมูล
+      await _sendMessageWithLocation(selectedPosition);
+      _savePosition(selectedPosition);
     }
   }
 
-// ฟังก์ชันบันทึกตำแหน่งที่เลือกไว้
   void _savePosition(LatLng position) {
-    // คุณสามารถใช้ shared preferences หรือฐานข้อมูลสำหรับเก็บตำแหน่งนี้ได้
     setState(() {
-      _allMessages[widget.sessionId] =
-          _messages; // อัปเดตข้อมูลแชทด้วยตำแหน่งใหม่
+      _allMessages[widget.sessionId] = _messages;
     });
   }
 
-// ฟังก์ชันดึงตำแหน่งก่อนหน้านี้
   LatLng? _getPreviousPosition() {
-    // ดึงข้อมูลจาก shared preferences หรือฐานข้อมูล
-    // ตัวอย่างใช้ค่าเริ่มต้นเป็น null
-    return null; // ปรับให้เหมาะกับที่เก็บข้อมูล
+    return null;
   }
 
   @override
@@ -365,174 +497,181 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
       body: Stack(
         children: [
-          Container(
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage("images/chat_background.jpg"),
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
           Column(
             children: [
               Expanded(
-                  child: _isLoading
-                      ? Center(child: CircularProgressIndicator())
-                      : _errorMessage != null
-                          ? Center(child: Text(_errorMessage!))
-                          : ListView.builder(
-                              controller: _scrollController,
-                              itemCount: _messages.length,
-                              itemBuilder: (context, index) {
-                                final message = _messages[index];
-                                bool isCurrentUser =
-                                    message['sender'] == widget.currentUser;
-                                LatLng? location;
+                child: _isLoading
+                    ? Center(child: CircularProgressIndicator())
+                    : _errorMessage != null
+                        ? Center(child: Text(_errorMessage!))
+                        : ListView.builder(
+                            controller: _scrollController,
+                            itemCount: _messages.length,
+                            itemBuilder: (context, index) {
+                              final message = _messages[index];
+                              bool isCurrentUser =
+                                  message['sender'] == widget.currentUser;
+                              LatLng? location;
 
-                                // ตรวจสอบว่าข้อความนั้นควรจะแสดงเป็นแผนที่หรือไม่
-                                if (message['latitude'] != null &&
-                                    message['longitude'] != null) {
-                                  try {
-                                    // ตรวจสอบว่า message มีการระบุว่าเป็นตำแหน่งหรือไม่ (เช่น ข้อความระบุว่าเป็น "Location:")
-                                    if (message['message'] != null &&
-                                        message['message']
-                                            .startsWith('Location:')) {
-                                      location = LatLng(
-                                        double.parse(message['latitude']),
-                                        double.parse(message['longitude']),
-                                      );
-                                    }
-                                  } catch (e) {
-                                    print(
-                                        'Error parsing latitude or longitude: $e');
-                                    location = null;
+                              if (message['latitude'] != null &&
+                                  message['longitude'] != null) {
+                                try {
+                                  if (message['message'] != null &&
+                                      message['message']
+                                          .startsWith('Location:')) {
+                                    location = LatLng(
+                                      double.parse(message['latitude']),
+                                      double.parse(message['longitude']),
+                                    );
                                   }
+                                } catch (e) {
+                                  print(
+                                      'Error parsing latitude or longitude: $e');
+                                  location = null;
                                 }
+                              }
 
-                                return Container(
-                                  margin: EdgeInsets.symmetric(
-                                      vertical: 5, horizontal: 10),
-                                  child: Row(
-                                    mainAxisAlignment: isCurrentUser
-                                        ? MainAxisAlignment.end
-                                        : MainAxisAlignment.start,
-                                    children: [
-                                      if (!isCurrentUser)
-                                        CircleAvatar(
-                                          backgroundImage: widget
-                                                  .recipientImage.isNotEmpty
-                                              ? NetworkImage(widget
-                                                  .recipientImage) // ใช้ `recipientImage` ที่ถูกส่งมา
-                                              : AssetImage(
-                                                      'images/default_profile.jpg')
-                                                  as ImageProvider, // รูปโปรไฟล์ค่าเริ่มต้น
-                                          radius: 20,
-                                          backgroundColor: Colors.grey[300],
-                                        ),
-                                      if (!isCurrentUser) SizedBox(width: 10),
-
-                                      // ส่วนของข้อความหรือแผนที่ตามเงื่อนไข
-                                      if (location != null)
-                                        GestureDetector(
-                                          onTap: () => _openMap(location!),
-                                          child: Container(
-                                            width: 150,
-                                            height: 150,
-                                            child: GoogleMap(
-                                              initialCameraPosition:
-                                                  CameraPosition(
-                                                target: location!,
-                                                zoom: 14.0,
+                              return Container(
+                                margin: EdgeInsets.symmetric(
+                                    vertical: 5, horizontal: 10),
+                                child: Column(
+                                  crossAxisAlignment: isCurrentUser
+                                      ? CrossAxisAlignment.end
+                                      : CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: isCurrentUser
+                                          ? MainAxisAlignment.end
+                                          : MainAxisAlignment.start,
+                                      children: [
+                                        if (!isCurrentUser)
+                                          CircleAvatar(
+                                            backgroundImage: widget
+                                                    .recipientImage.isNotEmpty
+                                                ? NetworkImage(
+                                                    widget.recipientImage)
+                                                : AssetImage(
+                                                        'images/default_profile.jpg')
+                                                    as ImageProvider,
+                                            radius: 20,
+                                            backgroundColor: Colors.grey[300],
+                                          ),
+                                        if (!isCurrentUser) SizedBox(width: 10),
+                                        if (location == null)
+                                          Container(
+                                            padding: EdgeInsets.all(12),
+                                            decoration: BoxDecoration(
+                                              color: isCurrentUser
+                                                  ? const Color.fromARGB(
+                                                      255, 94, 202, 241)
+                                                  : Colors.white
+                                                      .withOpacity(0.9),
+                                              borderRadius: BorderRadius.only(
+                                                topLeft: Radius.circular(20),
+                                                topRight: Radius.circular(20),
+                                                bottomLeft: isCurrentUser
+                                                    ? Radius.circular(20)
+                                                    : Radius.circular(0),
+                                                bottomRight: isCurrentUser
+                                                    ? Radius.circular(0)
+                                                    : Radius.circular(20),
                                               ),
-                                              markers: {
-                                                Marker(
-                                                  markerId:
-                                                      MarkerId('selected'),
-                                                  position: location!,
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.black12,
+                                                  offset: Offset(0, 2),
+                                                  blurRadius: 4.0,
                                                 ),
-                                              },
-                                              zoomControlsEnabled: false,
-                                              scrollGesturesEnabled: false,
-                                              rotateGesturesEnabled: false,
-                                              tiltGesturesEnabled: false,
-                                              mapType: MapType.normal,
+                                              ],
                                             ),
-                                          ),
-                                        ),
-                                      if (location == null)
-                                        Container(
-                                          padding: EdgeInsets.all(12),
-                                          decoration: BoxDecoration(
-                                            color: isCurrentUser
-                                                ? const Color.fromARGB(
-                                                    255, 94, 202, 241)
-                                                : Colors.white.withOpacity(0.9),
-                                            borderRadius: BorderRadius.only(
-                                              topLeft: Radius.circular(20),
-                                              topRight: Radius.circular(20),
-                                              bottomLeft: isCurrentUser
-                                                  ? Radius.circular(20)
-                                                  : Radius.circular(0),
-                                              bottomRight: isCurrentUser
-                                                  ? Radius.circular(0)
-                                                  : Radius.circular(20),
+                                            constraints: BoxConstraints(
+                                              maxWidth: MediaQuery.of(context)
+                                                      .size
+                                                      .width *
+                                                  0.7,
                                             ),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: Colors.black12,
-                                                offset: Offset(0, 2),
-                                                blurRadius: 4.0,
-                                              ),
-                                            ],
-                                          ),
-                                          constraints: BoxConstraints(
-                                            maxWidth: MediaQuery.of(context)
-                                                    .size
-                                                    .width *
-                                                0.7,
-                                          ),
-                                          child: message['image_url'] != null &&
-                                                  message['image_url']!
-                                                      .isNotEmpty
-                                              ? Image.network(
-                                                  message['image_url']!,
-                                                  errorBuilder: (context, error,
-                                                      stackTrace) {
-                                                    return Text(
-                                                      'Image failed to load',
-                                                      style: TextStyle(
-                                                          color: Colors.red),
-                                                    );
-                                                  },
-                                                )
-                                              : Text(
-                                                  message['message'] ?? '',
-                                                  style: TextStyle(
-                                                    fontSize: 16,
-                                                    color: isCurrentUser
-                                                        ? Colors.black87
-                                                        : Colors.black54,
+                                            child: message['image_url'] !=
+                                                        null &&
+                                                    message['image_url']!
+                                                        .isNotEmpty
+                                                ? Image.network(
+                                                    message['image_url']!,
+                                                    errorBuilder: (context,
+                                                        error, stackTrace) {
+                                                      return Text(
+                                                        'Image failed to load',
+                                                        style: TextStyle(
+                                                            color: Colors.red),
+                                                      );
+                                                    },
+                                                  )
+                                                : Text(
+                                                    message['message'] ?? '',
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                      color: isCurrentUser
+                                                          ? Colors.black87
+                                                          : Colors.black54,
+                                                    ),
                                                   ),
-                                                ),
+                                          ),
+                                      ],
+                                    ),
+                                    if (location != null)
+                                      GestureDetector(
+                                        onTap: () => _openMap(location!),
+                                        child: Container(
+                                          height: 150, // Mini map height
+                                          width: 150,
+                                          child: GoogleMap(
+                                            initialCameraPosition:
+                                                CameraPosition(
+                                              target: location!,
+                                              zoom: 14,
+                                            ),
+                                            markers: {
+                                              Marker(
+                                                markerId: MarkerId(
+                                                    'location_marker_$index'),
+                                                position: location!,
+                                              ),
+                                            },
+                                            gestureRecognizers: Set()
+                                              ..add(Factory<
+                                                  OneSequenceGestureRecognizer>(
+                                                () => EagerGestureRecognizer(),
+                                              )),
+                                            zoomGesturesEnabled: false,
+                                            scrollGesturesEnabled: false,
+                                            tiltGesturesEnabled: false,
+                                            rotateGesturesEnabled: false,
+                                            myLocationButtonEnabled: false,
+                                            onTap: (position) {
+                                              _openMap(location!);
+                                            },
+                                          ),
                                         ),
-                                      if (isCurrentUser) SizedBox(width: 10),
-                                      if (isCurrentUser)
-                                        CircleAvatar(
-                                          backgroundImage: widget
-                                                  .currentUserImage.isNotEmpty
-                                              ? NetworkImage(
-                                                  widget.currentUserImage)
-                                              : AssetImage(
-                                                      'images/default_profile.jpg')
-                                                  as ImageProvider,
-                                          radius: 20,
-                                          backgroundColor: Colors.grey[300],
-                                        ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            )),
+                                      ),
+                                    if (!isCurrentUser &&
+                                        message['message'] != null &&
+                                        message['message']
+                                            .contains('ราคาสำหรับ') &&
+                                        message['isResponded'] != true)
+                                      Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.end,
+                                        children: [
+                                          SizedBox(height: 10),
+                                          _buildResponseButtons(
+                                              index), // แสดงปุ่มตกลง/ปฏิเสธ
+                                        ],
+                                      )
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+              ),
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Row(

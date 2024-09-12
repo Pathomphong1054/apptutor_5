@@ -30,9 +30,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  location: ^5.0.0  
-  permission_handler: ^10.2.0
-  geolocator: ^9.0.1
+  # onesignal_flutter: ^5.2.5
+  location: ^6.0.2  
+  permission_handler: ^11.3.1
+  geolocator: ^13.0.1
   http: ^0.13.6
   file_picker: ^8.0.0+1
   image_picker: ^1.1.2
@@ -49,6 +50,7 @@ dependencies:
   flutter_google_places: ^0.3.0
   geocoding: ^3.0.0
   google_maps_webservice: ^0.0.19
+
   
 
 

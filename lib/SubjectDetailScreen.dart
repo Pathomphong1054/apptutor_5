@@ -141,12 +141,13 @@ class _SubjectDetailScreenState extends State<SubjectDetailScreen> {
           currentUser: widget.userName,
           recipient: recipient,
           recipientImage: recipientImage,
-          currentUserImage: widget.profileImageUrl,
+           currentUserImage: widget.profileImageUrl,
           sessionId: sessionId,
           currentUserRole: widget.userRole,
           idUser: widget.idUser,
           userId: widget.idUser,
-          tutorId: tutorId, 
+          tutorId: tutorId,
+          profileImageUrl: widget.profileImageUrl,
         ),
       ),
     );
@@ -162,6 +163,7 @@ class _SubjectDetailScreenState extends State<SubjectDetailScreen> {
               userName: userName,
               onProfileUpdated: () {},
               userRole: 'student',
+              profileImageUrl: '',
             );
           } else {
             return TutorProfileScreen(
@@ -169,13 +171,14 @@ class _SubjectDetailScreenState extends State<SubjectDetailScreen> {
               userRole: 'tutor',
               canEdit: false,
               currentUser: widget.userName,
-              currentUserImage: widget.profileImageUrl,
+               currentUserImage: widget.profileImageUrl,
               onProfileUpdated: () {},
               username: '',
               profileImageUrl: '',
               userId: widget.idUser,
               tutorId: tutorId,
               idUser: widget.idUser,
+              recipientImage: '',
             );
           }
         },
@@ -320,6 +323,7 @@ class _SubjectDetailScreenState extends State<SubjectDetailScreen> {
                                 userId: widget.idUser,
                                 tutorId: tutor['id'].toString(),
                                 idUser: widget.idUser,
+                                recipientImage: '',
                               ),
                             ),
                           );

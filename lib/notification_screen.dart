@@ -7,9 +7,15 @@ class NotificationScreen extends StatefulWidget {
   final String userName;
   final String userRole;
   final String idUser;
+  final String profileImageUrl;
+  final String currentUserImage;
 
   NotificationScreen(
-      {required this.userName, required this.userRole, required this.idUser});
+      {required this.userName,
+      required this.userRole,
+      required this.idUser,
+      required this.profileImageUrl,
+      required this.currentUserImage});
 
   @override
   _NotificationScreenState createState() => _NotificationScreenState();
@@ -124,12 +130,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
           currentUser: widget.userName,
           recipient: recipient,
           recipientImage: recipientImage,
-          currentUserImage: '', // ใส่รูปภาพของผู้ใช้ปัจจุบัน
           sessionId: '', // ใส่ session ID ตามที่ต้องการ
           currentUserRole: widget.userRole,
           idUser: widget.idUser,
           userId: widget.idUser,
-          tutorId: tutorId,
+          tutorId: tutorId, profileImageUrl: widget.profileImageUrl,
+           currentUserImage: widget.currentUserImage,
         ),
       ),
     );

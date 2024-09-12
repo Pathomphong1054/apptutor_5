@@ -17,7 +17,7 @@ class TutorProfileScreen extends StatefulWidget {
   final VoidCallback? onProfileUpdated;
   final bool canEdit;
   final String currentUser;
-  final String currentUserImage;
+   final String currentUserImage;
   final String idUser;
 
   const TutorProfileScreen({
@@ -29,10 +29,11 @@ class TutorProfileScreen extends StatefulWidget {
     this.onProfileUpdated,
     this.canEdit = false,
     required this.currentUser,
-    required this.currentUserImage,
+     required this.currentUserImage,
     required String username,
     required String profileImageUrl,
     required this.idUser,
+    required String recipientImage,
   }) : super(key: key);
 
   @override
@@ -630,6 +631,8 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                                         currentUserImage:
                                             widget.currentUserImage,
                                         idUser: widget.idUser,
+                                        profileImageUrl: '',
+                                        recipientImage: '',
                                       ),
                                     ),
                                   );

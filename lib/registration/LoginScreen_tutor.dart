@@ -56,8 +56,10 @@ class _LoginScreenTutorState extends State<LoginScreenTutor> {
               userRole: userRole,
               profileImageUrl: profileImageUrl,
               currentUserRole: 'Tutor',
-              tutorName: '', recipientImage: '',
-              
+              tutorName: '',
+              recipientImage: '',
+              currentUserImage: '',
+              tutorId: '',
             ),
           ),
         );

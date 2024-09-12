@@ -65,6 +65,7 @@ class _FavoriteStudentScreenState extends State<FavoriteStudentScreen> {
           userName: student['name'],
           onProfileUpdated: () {},
           userRole: 'student',
+          profileImageUrl: '',
         ),
       ),
     );

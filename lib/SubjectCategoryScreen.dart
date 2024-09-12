@@ -14,7 +14,7 @@ class SubjectCategoryScreen extends StatelessWidget {
     required this.userName,
     required this.userRole,
     required this.profileImageUrl,
-    required this.idUser,
+    required this.idUser, required String recipientImage,
   }) : super(key: key);
 
   @override

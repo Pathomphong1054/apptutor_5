@@ -47,6 +47,12 @@ class _LoginScreenStudentState extends State<LoginScreenStudent> {
               : 'images/default_profile.jpg';
           final String idUser = responseData['id'].toString();
 
+          // กำหนดค่าของ recipientImage และ currentUserImage
+          final String recipientImage =
+              profileImageUrl; // กำหนดค่า recipientImage ตามข้อมูลที่มี
+          final String currentUserImage =
+              profileImageUrl; // กำหนด currentUserImage ตาม profileImage ของผู้ใช้เอง
+
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
@@ -56,8 +62,10 @@ class _LoginScreenStudentState extends State<LoginScreenStudent> {
                 profileImageUrl: profileImageUrl,
                 currentUserRole: 'student',
                 idUser: idUser,
-                tutorName: '', recipientImage: '',
-                
+                tutorName: '',
+                recipientImage: recipientImage, // ส่งค่า recipientImage
+                currentUserImage: currentUserImage, // ส่งค่า currentUserImage
+                tutorId: '',
               ),
             ),
           );

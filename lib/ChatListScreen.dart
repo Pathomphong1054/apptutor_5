@@ -10,6 +10,7 @@ class ChatListScreen extends StatefulWidget {
   final String currentUserRole;
   final String idUser;
   final String recipientImage;
+  final String profileImageUrl;
 
   const ChatListScreen({
     required this.currentUser,
@@ -17,6 +18,7 @@ class ChatListScreen extends StatefulWidget {
     required this.currentUserRole,
     required this.idUser,
     required this.recipientImage,
+    required this.profileImageUrl,
   });
 
   @override
@@ -38,7 +40,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
   Future<void> _fetchConversations() async {
     try {
       final response = await http.get(Uri.parse(
-          'http://10.5.50.82/tutoring_app/fetch_conversations.php?user=${widget.currentUser}'));
+          'http://10.5.50.138/tutoring_app/fetch_conversations.php?user=${widget.currentUser}'));
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         if (responseData['status'] == 'success') {
@@ -77,7 +79,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
   Future<String?> _fetchSessionId(String recipient) async {
     final response = await http.get(Uri.parse(
-        'http://10.5.50.82/tutoring_app/fetch_session_id.php?recipient=$recipient&user=${widget.currentUser}'));
+        'http://10.5.50.138/tutoring_app/fetch_session_id.php?recipient=$recipient&user=${widget.currentUser}'));
 
     if (response.statusCode == 200) {
       final responseData = json.decode(response.body);
@@ -99,21 +101,44 @@ class _ChatListScreenState extends State<ChatListScreen> {
         print("Navigating to ChatScreen with:");
         print("Recipient Image: $recipientImage");
         print("Current User Image: ${widget.currentUserImage}");
+        print("profileImageUrl: ${widget.profileImageUrl}");
 
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ChatScreen(
-              currentUser: widget.currentUser,
-              recipient: recipient,
-              recipientImage: recipientImage,
-              currentUserImage: widget.currentUserImage,
-              sessionId: sessionId,
-              currentUserRole: widget.currentUserRole,
-              idUser: widget.idUser,
-              userId: widget.idUser,
-              tutorId: tutorId,
-            ),
+            builder: (context) {
+              // ตรวจสอบบทบาทของผู้ใช้
+              if (widget.currentUserRole == 'student') {
+                // สำหรับนักเรียน: currentUserImage คือรูปนักเรียน, recipientImage คือรูปติวเตอร์
+                return ChatScreen(
+                  currentUser: widget.currentUser,
+                  recipient: recipient,
+                  recipientImage: recipientImage, // รูปของติวเตอร์
+                  currentUserImage: widget.currentUserImage, // รูปของนักเรียน
+                  sessionId: sessionId,
+                  currentUserRole: widget.currentUserRole,
+                  idUser: widget.idUser,
+                  userId: widget.idUser,
+                  tutorId: tutorId,
+                  profileImageUrl: widget.profileImageUrl, // รูปนักเรียนใน Chat
+                );
+              } else if (widget.currentUserRole == 'Tutor') {
+                // สำหรับติวเตอร์: currentUserImage คือรูปติวเตอร์, recipientImage คือรูปนักเรียน
+                return ChatScreen(
+                  currentUser: widget.currentUser,
+                  recipient: recipient,
+                  recipientImage: recipientImage, // รูปของนักเรียน
+                  currentUserImage: widget.currentUserImage, // รูปของติวเตอร์
+                  sessionId: sessionId,
+                  currentUserRole: widget.currentUserRole,
+                  idUser: widget.idUser,
+                  userId: widget.idUser,
+                  tutorId: tutorId,
+                  profileImageUrl: widget.profileImageUrl, // รูปติวเตอร์ใน Chat
+                );
+              }
+              return SizedBox(); // กรณีที่ไม่มีบทบาทที่กำหนด
+            },
           ),
         );
       }
@@ -126,7 +151,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
     final conversation = _conversations[index];
     try {
       final response = await http.post(
-        Uri.parse('http://10.5.50.82/tutoring_app/delete_conversation.php'),
+        Uri.parse('http://10.5.50.138/tutoring_app/delete_conversation.php'),
         body: {
           'user': widget.currentUser,
           'recipient': conversation['recipient_username'],
@@ -218,7 +243,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                                                 'recipient_image'] !=
                                             null
                                         ? NetworkImage(
-                                            'http://10.5.50.82/tutoring_app/uploads/${conversation['recipient_image']}')
+                                            'http://10.5.50.138/tutoring_app/uploads/${conversation['recipient_image']}')
                                         : AssetImage(
                                                 'images/default_profile.jpg')
                                             as ImageProvider,
@@ -258,7 +283,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                                       conversation['recipient_username'] ??
                                           'unknown_user',
                                       conversation['recipient_image'] != null
-                                          ? 'http://10.5.50.82/tutoring_app/uploads/${conversation['recipient_image']}'
+                                          ? 'http://10.5.50.138/tutoring_app/uploads/${conversation['recipient_image']}'
                                           : 'images/default_profile.jpg',
                                     );
                                   },

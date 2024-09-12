@@ -257,6 +257,8 @@ class _TutorRegistrationScreenState extends State<TutorRegistrationScreen> {
                 idUser: '',
                 tutorName: '',
                 recipientImage: '',
+                currentUserImage: '',
+                tutorId: '',
               ),
             ),
           );

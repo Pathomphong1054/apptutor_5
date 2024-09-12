@@ -35,6 +35,16 @@ class _TutorSentRequestsScreenState extends State<TutorSentRequestsScreen> {
     _fetchSentRequests();
   }
 
+// แก้ชื่อฟังก์ชันเป็น _showErrorSnackBar
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: Duration(seconds: 3),
+      ),
+    );
+  }
+
   Future<void> _fetchSentRequests() async {
     if (widget.tutorName.isEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -62,6 +72,9 @@ class _TutorSentRequestsScreenState extends State<TutorSentRequestsScreen> {
         if (data['status'] == 'success') {
           setState(() {
             sentRequests = data['requests'];
+            // จัดเรียงข้อมูลใหม่ โดยข้อมูลล่าสุดจะอยู่ด้านบน
+            sentRequests
+                .sort((a, b) => b['created_at'].compareTo(a['created_at']));
           });
         } else {
           _showErrorSnackBar(
@@ -80,7 +93,33 @@ class _TutorSentRequestsScreenState extends State<TutorSentRequestsScreen> {
     }
   }
 
-  void _showErrorSnackBar(String message) {
+  // ฟังก์ชันลบคำขอ
+  Future<void> _deleteRequest(int index, String requestId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('http://10.5.50.82/tutoring_app/tutor_delete_request.php'),
+        body: {'request_id': requestId},
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        if (responseData['status'] == 'success') {
+          setState(() {
+            sentRequests.removeAt(index); // ลบข้อมูลออกจากรายการ
+          });
+          _showSnackBar('Request deleted successfully');
+        } else {
+          _showSnackBar('Failed to delete request: ${responseData['message']}');
+        }
+      } else {
+        _showSnackBar('Failed to delete request. Please try again.');
+      }
+    } catch (e) {
+      _showSnackBar('An error occurred: $e');
+    }
+  }
+
+  void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
@@ -125,79 +164,98 @@ class _TutorSentRequestsScreenState extends State<TutorSentRequestsScreen> {
                       final createdAt = request['created_at'];
                       final profileImage =
                           request['profile_image']; // ดึงข้อมูลรูปโปรไฟล์
+                      final requestId = request['id']; // เก็บ ID ของคำขอ
 
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12.0, vertical: 8.0),
-                        child: GestureDetector(
-                          onTap: () {
-                            // นำทางไปยังหน้าจอโปรไฟล์นักเรียน
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => StudentProfileScreen(
-                                  userName: studentName,
-                                  onProfileUpdated: () {},
-                                  userRole: 'student',
+                      return Dismissible(
+                        key:
+                            Key(requestId.toString()), // ใช้ ID ในการระบุรายการ
+                        direction:
+                            DismissDirection.endToStart, // ลบจากขวาไปซ้าย
+                        onDismissed: (direction) {
+                          _deleteRequest(index, requestId.toString());
+                        },
+
+                        background: Container(
+                          color: Colors.red,
+                          alignment: Alignment.centerRight,
+                          padding: EdgeInsets.symmetric(horizontal: 20),
+                          child: Icon(Icons.delete, color: Colors.white),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12.0, vertical: 8.0),
+                          child: GestureDetector(
+                            onTap: () {
+                              // นำทางไปยังหน้าจอโปรไฟล์นักเรียน
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => StudentProfileScreen(
+                                    userName: studentName,
+                                    onProfileUpdated: () {},
+                                    userRole: 'student',
+                                    profileImageUrl: '',
+                                  ),
                                 ),
+                              );
+                            },
+                            child: Card(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(15),
                               ),
-                            );
-                          },
-                          child: Card(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(15),
-                            ),
-                            elevation: 5,
-                            child: Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      CircleAvatar(
-                                        radius: 25,
-                                        backgroundImage: profileImage != null &&
-                                                profileImage.isNotEmpty
-                                            ? NetworkImage(
-                                                'http://10.5.50.82/tutoring_app/uploads/$profileImage')
-                                            : AssetImage(
-                                                    'assets/default_profile.png')
-                                                as ImageProvider,
-                                      ),
-                                      SizedBox(width: 10),
-                                      Text(
-                                        studentName,
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
+                              elevation: 5,
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        CircleAvatar(
+                                          radius: 25,
+                                          backgroundImage: profileImage !=
+                                                      null &&
+                                                  profileImage.isNotEmpty
+                                              ? NetworkImage(
+                                                  'http://10.5.50.82/tutoring_app/uploads/$profileImage')
+                                              : AssetImage(
+                                                      'assets/default_profile.png')
+                                                  as ImageProvider,
                                         ),
-                                      ),
-                                      Spacer(),
-                                      Icon(
-                                        isAccepted
-                                            ? Icons.check_circle
-                                            : Icons.pending,
-                                        color: isAccepted
-                                            ? Colors.green
-                                            : Colors.grey,
-                                        size: 30,
-                                      ),
-                                    ],
-                                  ),
-                                  SizedBox(height: 10),
-                                  Text(
-                                    requestMessage,
-                                    style: TextStyle(
-                                        fontSize: 16, color: Colors.black87),
-                                  ),
-                                  SizedBox(height: 10),
-                                  Text(
-                                    'Sent at: $createdAt',
-                                    style: TextStyle(
-                                        fontSize: 14, color: Colors.grey),
-                                  ),
-                                ],
+                                        SizedBox(width: 10),
+                                        Text(
+                                          studentName,
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        Spacer(),
+                                        Icon(
+                                          isAccepted
+                                              ? Icons.check_circle
+                                              : Icons.pending,
+                                          color: isAccepted
+                                              ? Colors.green
+                                              : Colors.grey,
+                                          size: 30,
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: 10),
+                                    Text(
+                                      requestMessage,
+                                      style: TextStyle(
+                                          fontSize: 16, color: Colors.black87),
+                                    ),
+                                    SizedBox(height: 10),
+                                    Text(
+                                      'Sent at: $createdAt',
+                                      style: TextStyle(
+                                          fontSize: 14, color: Colors.grey),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
