@@ -19,6 +19,7 @@ class TutorProfileScreen extends StatefulWidget {
   final String currentUser;
   final String currentUserImage;
   final String idUser;
+  final String currentUserRole;
 
   const TutorProfileScreen({
     Key? key,
@@ -34,6 +35,7 @@ class TutorProfileScreen extends StatefulWidget {
     required username,
     required String profileImageUrl,
     required String recipientImage,
+    required this.currentUserRole,
   }) : super(key: key);
 
   @override
@@ -194,7 +196,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
 
     try {
       final url = Uri.parse(
-        'http://10.5.50.82/tutoring_app/get_tutor_profile.php?username=${widget.userName}',
+        'http://10.5.50.138/tutoring_app/get_tutor_profile.php?username=${widget.userName}',
       );
       final response = await http.get(url);
 
@@ -252,7 +254,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
   Future<void> _fetchReviews() async {
     try {
       final response = await http.get(Uri.parse(
-          'http://10.5.50.82/tutoring_app/get_reviews.php?tutor_name=${widget.userName}'));
+          'http://10.5.50.138/tutoring_app/get_reviews.php?tutor_name=${widget.userName}'));
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
@@ -283,7 +285,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
 
     try {
       final url =
-          Uri.parse('http://10.5.50.82/tutoring_app/check_favorite.php');
+          Uri.parse('http://10.5.50.138/tutoring_app/check_favorite.php');
       final response = await http.post(url, body: {
         'student_id': widget.userId,
         'tutor_id': widget.tutorId,
@@ -319,7 +321,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
 
     try {
       final url =
-          Uri.parse('http://10.5.50.82/tutoring_app/favorite_tutors.php');
+          Uri.parse('http://10.5.50.138/tutoring_app/favorite_tutors.php');
       final response = await http.post(url, body: {
         'student_id': widget.userId.toString(),
         'tutor_id': widget.tutorId.toString(),
@@ -371,7 +373,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
     try {
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('http://10.5.50.82/tutoring_app/upload_profile_image.php'),
+        Uri.parse('http://10.5.50.138/tutoring_app/upload_profile_image.php'),
       );
       request.files.add(
         await http.MultipartFile.fromPath(
@@ -424,7 +426,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
     try {
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('http://10.5.50.82/tutoring_app/upload_resume.php'),
+        Uri.parse('http://10.5.50.138/tutoring_app/upload_resume.php'),
       );
       request.files.add(
         await http.MultipartFile.fromPath(
@@ -472,7 +474,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
     } else {
       try {
         var response = await http.post(
-          Uri.parse('http://10.5.50.82/tutoring_app/update_tutor_profile.php'),
+          Uri.parse('http://10.5.50.138/tutoring_app/update_tutor_profile.php'),
           body: {
             'username': widget.userName,
             'name': _nameController.text,
@@ -518,7 +520,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://10.5.50.82/tutoring_app/add_review.php'),
+        Uri.parse('http://10.5.50.138/tutoring_app/add_review.php'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode(review),
       );
@@ -604,7 +606,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                                     ? FileImage(_profileImage!)
                                     : (_profileImageUrl != null
                                         ? NetworkImage(
-                                            'http://10.5.50.82/tutoring_app/uploads/$_profileImageUrl')
+                                            'http://10.5.50.138/tutoring_app/uploads/$_profileImageUrl')
                                         : AssetImage(
                                                 'images/default_profile.jpg')
                                             as ImageProvider),
@@ -649,6 +651,11 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                               SizedBox(width: 10),
                               ElevatedButton.icon(
                                 onPressed: () {
+                                  // ตรวจสอบบทบาทผู้ใช้
+                                  String role = widget.userRole == 'student'
+                                      ? 'student'
+                                      : 'Tutor';
+
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
@@ -663,16 +670,15 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                                         idUser: widget.idUser,
                                         profileImageUrl: '',
                                         recipientImage: '',
+                                        userRole:
+                                            role, // ส่งค่า role เป็น 'student' หรือ 'Tutor'
+                                        currentUserRole: widget.currentUserRole,
                                       ),
                                     ),
                                   );
                                 },
                                 icon: Icon(Icons.schedule),
-                                label: Text('Tutoring'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blue[800],
-                                  foregroundColor: Colors.white,
-                                ),
+                                label: Text("Schedule Tutoring"),
                               ),
                             ],
                           ),
@@ -849,13 +855,13 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                       MaterialPageRoute(
                         builder: (context) => FullScreenImageViewer(
                           imageUrl:
-                              'http://10.5.50.82/tutoring_app/uploads/$_resumeImageUrl',
+                              'http://10.5.50.138/tutoring_app/uploads/$_resumeImageUrl',
                         ),
                       ),
                     );
                   },
                   child: Image.network(
-                    'http://10.5.50.82/tutoring_app/uploads/$_resumeImageUrl',
+                    'http://10.5.50.138/tutoring_app/uploads/$_resumeImageUrl',
                     height: 400, // กำหนดขนาดรูปในหน้าหลัก (ไม่เต็มจอ)
                     fit: BoxFit.cover,
                   ),

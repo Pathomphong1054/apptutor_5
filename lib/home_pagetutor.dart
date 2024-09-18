@@ -42,7 +42,8 @@ class HomePage2 extends StatefulWidget {
     required this.tutorName,
     required this.recipientImage,
     required this.currentUserImage,
-    required this.tutorId, required this.userImageUrl,
+    required this.tutorId,
+    required this.userImageUrl,
   }) : super(key: key);
 
   @override
@@ -86,7 +87,7 @@ class _HomePage2State extends State<HomePage2>
 
   Future<void> _fetchTutors() async {
     _setLoadingState(true);
-    var url = Uri.parse('http://10.5.50.82/tutoring_app/fetch_tutors.php');
+    var url = Uri.parse('http://10.5.50.138/tutoring_app/fetch_tutors.php');
     try {
       var response = await http.get(url);
       if (response.statusCode == 200) {
@@ -139,7 +140,7 @@ class _HomePage2State extends State<HomePage2>
 
   Future<void> _fetchProfileImage() async {
     var url = Uri.parse(
-        'http://10.5.50.82/tutoring_app/get_user_profile.php?username=$_userName&role=${widget.userRole}');
+        'http://10.5.50.138/tutoring_app/get_user_profile.php?username=$_userName&role=${widget.userRole}');
     try {
       var response = await http.get(url);
       if (response.statusCode == 200) {
@@ -147,7 +148,7 @@ class _HomePage2State extends State<HomePage2>
         if (data['status'] == 'success') {
           setState(() {
             _profileImageUrl = data['profile_image'] != null
-                ? 'http://10.5.50.82/tutoring_app/uploads/${data['profile_image']}'
+                ? 'http://10.5.50.138/tutoring_app/uploads/${data['profile_image']}'
                 : 'images/default_profile.jpg';
             _userName = data['name'];
           });
@@ -166,7 +167,7 @@ class _HomePage2State extends State<HomePage2>
 
   Future<void> _fetchMessages() async {
     _setLoadingState(true);
-    var url = Uri.parse('http://10.5.50.82/tutoring_app/fetch_messages.php');
+    var url = Uri.parse('http://10.5.50.138/tutoring_app/fetch_messages.php');
     try {
       var response = await http.get(url);
 
@@ -200,7 +201,7 @@ class _HomePage2State extends State<HomePage2>
         'subject': 'N/A',
       };
 
-      var url = Uri.parse('http://10.5.50.82/tutoring_app/post_message.php');
+      var url = Uri.parse('http://10.5.50.138/tutoring_app/post_message.php');
       var response =
           await http.post(url, body: json.encode(messageObject), headers: {
         'Content-Type': 'application/json',
@@ -263,7 +264,7 @@ class _HomePage2State extends State<HomePage2>
 
   Future<void> _sendRequest(String recipient, String recipientImage) async {
     var response = await http.post(
-      Uri.parse('http://10.5.50.82/tutoring_app/send_request.php'),
+      Uri.parse('http://10.5.50.138/tutoring_app/send_request.php'),
       body: json.encode({
         'sender': widget.userName,
         'recipient': recipient,
@@ -311,6 +312,7 @@ class _HomePage2State extends State<HomePage2>
                 username: '',
                 idUser: widget.idUser,
                 recipientImage: widget.recipientImage,
+                currentUserRole: widget.currentUserRole,
               )
             : StudentProfileScreen(
                 userName: userName,
@@ -373,12 +375,12 @@ class _HomePage2State extends State<HomePage2>
             context,
             MaterialPageRoute(
               builder: (context) => FavoriteTutorsScreen(
-                currentUser: widget.userName,
-                userId: widget.idUser,
-                currentUserImage: '',
-                idUser: widget.idUser,
-                recipientImage: widget.recipientImage,
-              ),
+                  currentUser: widget.userName,
+                  userId: widget.idUser,
+                  currentUserImage: '',
+                  idUser: widget.idUser,
+                  recipientImage: widget.recipientImage,
+                  currentUserRole: widget.currentUserRole),
             ),
           );
         } else if (widget.userRole == 'Tutor') {
@@ -405,6 +407,7 @@ class _HomePage2State extends State<HomePage2>
                 idUser: widget.idUser,
                 profileImageUrl: widget.profileImageUrl,
                 recipientImage: widget.recipientImage,
+                currentUserRole: widget.currentUserRole,
               ),
             ),
           );
@@ -519,6 +522,7 @@ class _HomePage2State extends State<HomePage2>
                             tutorId: tutorId,
                             idUser: widget.idUser,
                             recipientImage: widget.recipientImage,
+                            currentUserRole: widget.currentUserRole,
                           ),
                   ),
                 );
@@ -594,7 +598,8 @@ class _HomePage2State extends State<HomePage2>
                             tutorId: '',
                             recipientImage: widget.recipientImage,
                             profileImageUrl: widget.profileImageUrl,
-                            currentUserRole: '', userImageUrl: widget.userImageUrl,
+                            currentUserRole: '',
+                            userImageUrl: widget.userImageUrl,
                           )
                       // builder: (context) => VariableCheckScreen(
                       //       tutorName: widget.tutorName,
@@ -646,27 +651,32 @@ class _HomePage2State extends State<HomePage2>
   }
 
   Widget _buildSearchField() {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: TextField(
-        decoration: InputDecoration(
-          prefixIcon: Icon(Icons.search, color: Colors.blue),
-          hintText: 'Search by name, subject, category, or topic',
-          hintStyle: TextStyle(fontSize: 18),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8.0),
+    // ตรวจสอบบทบาทของผู้ใช้
+    if (widget.currentUserRole == 'student') {
+      return Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: TextField(
+          decoration: InputDecoration(
+            prefixIcon: Icon(Icons.search, color: Colors.blue),
+            hintText: 'Search by name, subject, category, or topic',
+            hintStyle: TextStyle(fontSize: 18),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+            filled: true,
+            fillColor: Colors.white,
           ),
-          filled: true,
-          fillColor: Colors.white,
+          onChanged: (query) {
+            setState(() {
+              searchQuery = query;
+              _filterAndSortTutors();
+            });
+          },
         ),
-        onChanged: (query) {
-          setState(() {
-            searchQuery = query;
-            _filterAndSortTutors();
-          });
-        },
-      ),
-    );
+      );
+    } else {
+      return SizedBox.shrink(); // ถ้าไม่ใช่นักเรียน จะไม่แสดงอะไร
+    }
   }
 
   Widget _buildCommonSection() {
@@ -764,7 +774,7 @@ class _HomePage2State extends State<HomePage2>
                       final subject = tutor['subject'] ?? 'No Subject';
                       final profileImageUrl = tutor['profile_images'] != null &&
                               tutor['profile_images'].isNotEmpty
-                          ? 'http://10.5.50.82/tutoring_app/uploads/' +
+                          ? 'http://10.5.50.138/tutoring_app/uploads/' +
                               tutor['profile_images']
                           : 'images/default_profile.jpg';
 
@@ -790,6 +800,7 @@ class _HomePage2State extends State<HomePage2>
                                 username: name,
                                 idUser: widget.idUser,
                                 recipientImage: widget.recipientImage,
+                                currentUserRole: widget.currentUserRole,
                               ),
                             ),
                           );
@@ -874,7 +885,7 @@ class _HomePage2State extends State<HomePage2>
                   final userName = message['userName'] ?? '';
                   final userImageUrl = message['profileImageUrl'] != null &&
                           message['profileImageUrl'].isNotEmpty
-                      ? 'http://10.5.50.82/tutoring_app/uploads/' +
+                      ? 'http://10.5.50.138/tutoring_app/uploads/' +
                           message['profileImageUrl']
                       : 'images/default_profile.jpg';
                   final messageText = message['message'] ?? '';

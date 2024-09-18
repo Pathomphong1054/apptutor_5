@@ -1,8 +1,10 @@
+import 'package:apptutor_2/BookedSessionsScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'chat_screen.dart';
+import 'package:apptutor_2/EditScheduleScreen.dart';
 
 class TutoringScheduleScreen extends StatefulWidget {
   final String tutorName;
@@ -12,6 +14,8 @@ class TutoringScheduleScreen extends StatefulWidget {
   final String idUser;
   final String recipientImage;
   final String profileImageUrl;
+  final String currentUserRole;
+  final String userRole;
 
   TutoringScheduleScreen({
     required this.tutorName,
@@ -21,6 +25,8 @@ class TutoringScheduleScreen extends StatefulWidget {
     required this.idUser,
     required this.recipientImage,
     required this.profileImageUrl,
+    required this.currentUserRole,
+    required this.userRole,
   });
 
   @override
@@ -28,6 +34,11 @@ class TutoringScheduleScreen extends StatefulWidget {
 }
 
 class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
+  Set<DateTime> studentSessions = {};
+  Set<DateTime> notTeachingDays = {}; // Days with black events
+  Set<DateTime> teachingSpecificTime = {};
+  Map<DateTime, Map<String, String>> specificTimeDetails = {};
+
   List<DateTime> selectedDays = [];
   TimeOfDay? startTime;
   TimeOfDay? endTime;
@@ -39,46 +50,74 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
   String tutorId = '';
   List<Map<String, dynamic>> rates = [];
   Set<DateTime> scheduledDays = {};
-  List<Map<String, dynamic>> scheduledTimesForDay =
-      []; // เวลาที่จองไว้ในวันนั้น
+  List<Map<String, dynamic>> scheduledTimesForDay = [];
 
   CalendarFormat _calendarFormat = CalendarFormat.month;
   DateTime _focusedDay = DateTime.now();
   List<Map<String, dynamic>> _scheduledSessions = [];
 
+  bool isNotTeachingDay = false; // Track if the selected day is a black day
+
   @override
   void initState() {
     super.initState();
-    _fetchScheduledSessions();
+    _fetchTutorSchedule(); // ดึงข้อมูลจากตาราง tutor_schedule
+    _fetchStudentSessions(); // ดึงข้อมูลจากตาราง tutoring_sessions
     _updateRates();
   }
 
-  Future<void> _fetchScheduledSessions() async {
+  // ฟังก์ชันดึงข้อมูลจากตาราง tutor_schedule สำหรับสีฟ้า
+  Future<void> _fetchTutorSchedule() async {
     final response = await http.get(
       Uri.parse(
-          'http://10.5.50.82/tutoring_app/fetch_scheduled_sessions.php?tutor=${widget.tutorName}'),
+          'http://10.5.50.138/tutoring_app/get_tutor_schedule.php?tutor=${widget.tutorName}'),
     );
 
     if (response.statusCode == 200) {
       final responseData = json.decode(response.body);
       if (responseData['status'] == 'success') {
         setState(() {
-          _scheduledSessions =
-              List<Map<String, dynamic>>.from(responseData['sessions']);
-          scheduledDays = _scheduledSessions
-              .map((session) => DateTime.parse(session['date']))
-              .toSet();
+          for (var session in responseData['sessions']) {
+            DateTime date = DateTime.parse(session['date']);
+            if (session['is_not_teaching'] == "ไม่รับติว") {
+              notTeachingDays.add(date); // Mark as not available (black)
+            } else if (session['start_time'] != null &&
+                session['end_time'] != null) {
+              teachingSpecificTime.add(date); // สีฟ้า
+              specificTimeDetails[date] = {
+                'start': session['start_time'],
+                'end': session['end_time']
+              };
+            }
+          }
         });
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(
-                  'ล้มเหลวในการโหลดตารางเรียน: ${responseData['message']}')),
-        );
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('ล้มเหลวในการโหลดตารางเรียน: ${response.body}')),
+        SnackBar(content: Text('ล้มเหลวในการโหลดตารางติวเตอร์')),
+      );
+    }
+  }
+
+  // ฟังก์ชันดึงข้อมูลจากตาราง tutoring_sessions สำหรับสีแดง
+  Future<void> _fetchStudentSessions() async {
+    final response = await http.get(
+      Uri.parse(
+          'http://10.5.50.138/tutoring_app/get_student_sessions.php?tutor=${widget.tutorName}'),
+    );
+
+    if (response.statusCode == 200) {
+      final responseData = json.decode(response.body);
+      if (responseData['status'] == 'success') {
+        setState(() {
+          for (var session in responseData['sessions']) {
+            studentSessions.add(DateTime.parse(session['date'])); // สีแดง
+          }
+        });
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('ล้มเหลวในการโหลดตารางของนักเรียน')),
       );
     }
   }
@@ -86,20 +125,16 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
   Future<void> _fetchScheduledTimesForDay(DateTime selectedDay) async {
     final response = await http.get(
       Uri.parse(
-          'http://10.5.50.82/tutoring_app/fetch_scheduled_times.php?date=$selectedDay&tutor=${widget.tutorName}'),
+          'http://10.5.50.138/tutoring_app/fetch_scheduled_times.php?date=$selectedDay&tutor=${widget.tutorName}'),
     );
 
     if (response.statusCode == 200) {
       final responseData = json.decode(response.body);
       if (mounted) {
         setState(() {
-          if (responseData['times'] != null) {
-            scheduledTimesForDay =
-                List<Map<String, dynamic>>.from(responseData['times']);
-          } else {
-            scheduledTimesForDay =
-                []; // ตั้งค่าให้เป็นลิสต์ว่างหาก 'times' เป็น null
-          }
+          scheduledTimesForDay = responseData['times'] != null
+              ? List<Map<String, dynamic>>.from(responseData['times'])
+              : [];
         });
       }
     } else {
@@ -110,25 +145,160 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
     }
   }
 
-  Future<void> _selectTime(BuildContext context, bool isStartTime) async {
-    final timePicked = await showTimePicker(
-      context: context,
-      initialTime: isStartTime
-          ? startTime ?? TimeOfDay(hour: 13, minute: 0)
-          : endTime ?? TimeOfDay(hour: 15, minute: 0),
-    );
+  void _showDayInfo(DateTime selectedDay) {
+    DateTime onlyDate =
+        DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
 
-    if (timePicked != null) {
-      setState(() {
-        if (isStartTime) {
-          startTime = timePicked;
-          startTimeController.text = startTime!.format(context);
-        } else {
-          endTime = timePicked;
-          endTimeController.text = endTime!.format(context);
+    String message = "";
+    if (studentSessions
+        .any((d) => DateTime(d.year, d.month, d.day) == onlyDate)) {
+      message = 'มีนักเรียนจองแล้ว';
+    } else if (notTeachingDays
+        .any((d) => DateTime(d.year, d.month, d.day) == onlyDate)) {
+      message = 'วันนี้ไม่รับติว';
+    } else if (teachingSpecificTime
+        .any((d) => DateTime(d.year, d.month, d.day) == onlyDate)) {
+      var startTime = specificTimeDetails[onlyDate]?['start'];
+      var endTime = specificTimeDetails[onlyDate]?['end'];
+      if (startTime != null && endTime != null) {
+        message = 'รับติวเฉพาะเวลา: $startTime - $endTime';
+      } else {
+        message = 'ไม่พบข้อมูลเวลา';
+      }
+    } else {
+      return; // ไม่มีป๊อปอัพแสดง
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('รายละเอียดวัน'),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _selectTimeForTutorSpecific(DateTime selectedDay) async {
+    DateTime onlyDate =
+        DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
+
+    // ตรวจสอบว่าวันที่เลือกมีเวลาเฉพาะที่ติวเตอร์กำหนดไว้หรือไม่
+    if (specificTimeDetails.containsKey(onlyDate)) {
+      var startTimeStr = specificTimeDetails[onlyDate]?['start'];
+      var endTimeStr = specificTimeDetails[onlyDate]?['end'];
+
+      // ถ้าเวลาต้นและเวลาสิ้นสุดมีค่า ให้ดำเนินการเลือกเวลา
+      if (startTimeStr != null && endTimeStr != null) {
+        // แปลงเวลาจาก String เป็น TimeOfDay
+        TimeOfDay startTime = TimeOfDay(
+          hour: int.parse(startTimeStr.split(":")[0]),
+          minute: int.parse(startTimeStr.split(":")[1]),
+        );
+        TimeOfDay endTime = TimeOfDay(
+          hour: int.parse(endTimeStr.split(":")[0]),
+          minute: int.parse(endTimeStr.split(":")[1]),
+        );
+
+        // เปิด TimePicker โดยตั้งค่าเริ่มต้นที่เวลาเริ่มต้นของติวเตอร์
+        final timePicked = await showTimePicker(
+          context: context,
+          initialTime: startTime,
+          builder: (BuildContext context, Widget? child) {
+            return MediaQuery(
+              data:
+                  MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+              child: child!,
+            );
+          },
+        );
+
+        // ตรวจสอบว่าเวลาที่เลือกอยู่ในช่วงเวลาที่ติวเตอร์กำหนดหรือไม่
+        if (timePicked != null) {
+          if (_isTimeWithinRange(timePicked, startTime, endTime)) {
+            // ถ้าเวลาอยู่ในช่วงที่ถูกต้อง อัปเดตเวลาเริ่มต้น
+            setState(() {
+              startTimeController.text = timePicked.format(context);
+            });
+          } else {
+            // แสดงข้อผิดพลาดถ้าเลือกเวลาอื่นที่อยู่นอกช่วง
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                  content: Text(
+                      'กรุณาเลือกเวลาในช่วง ${startTime.format(context)} - ${endTime.format(context)}')),
+            );
+          }
         }
-        _updateRates();
-      });
+      }
+    }
+  }
+
+// ฟังก์ชันตรวจสอบว่าเวลาที่เลือกอยู่ในช่วงเวลาที่กำหนดหรือไม่
+  bool _isTimeWithinRange(
+      TimeOfDay pickedTime, TimeOfDay startTime, TimeOfDay endTime) {
+    final pickedMinutes = pickedTime.hour * 60 + pickedTime.minute;
+    final startMinutes = startTime.hour * 60 + startTime.minute;
+    final endMinutes = endTime.hour * 60 + endTime.minute;
+
+    // ตรวจสอบว่าช่วงเวลาที่เลือกอยู่ในช่วงเวลาที่กำหนดหรือไม่
+    return pickedMinutes >= startMinutes && pickedMinutes <= endMinutes;
+  }
+
+  void _showSelectionLimitMessage(DateTime day) {
+    DateTime onlyDate = DateTime(day.year, day.month, day.day);
+    if (teachingSpecificTime.contains(onlyDate)) {
+      var start = specificTimeDetails[onlyDate]?['start'];
+      var end = specificTimeDetails[onlyDate]?['end'];
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('เลือกได้เฉพาะเวลา: $start ถึง $end'),
+        ),
+      );
+    } else if (notTeachingDays.contains(onlyDate)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('วันนี้ไม่สามารถนัดหมายได้'),
+        ),
+      );
+    }
+  }
+
+  Future<void> _selectTime(BuildContext context, bool isStartTime) async {
+    DateTime selectedDay =
+        selectedDays.isNotEmpty ? selectedDays.first : _focusedDay;
+
+    // ตรวจสอบว่าถ้าวันที่เลือกเป็นสีฟ้า ให้เลือกเวลาเฉพาะที่ติวเตอร์กำหนด
+    if (teachingSpecificTime.contains(selectedDay)) {
+      await _selectTimeForTutorSpecific(selectedDay);
+    } else {
+      final timePicked = await showTimePicker(
+        context: context,
+        initialTime: isStartTime
+            ? startTime ?? TimeOfDay(hour: 13, minute: 0)
+            : endTime ?? TimeOfDay(hour: 15, minute: 0),
+      );
+
+      if (timePicked != null) {
+        setState(() {
+          if (isStartTime) {
+            startTime = timePicked;
+            startTimeController.text = startTime!.format(context);
+          } else {
+            endTime = timePicked;
+            endTimeController.text = endTime!.format(context);
+          }
+          _updateRates();
+        });
+      }
     }
   }
 
@@ -139,6 +309,7 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
       final durationMinutes = endMinutes - startMinutes;
       final durationHours = (durationMinutes / 60).ceil();
       double baseRate;
+
       switch (selectedLevel) {
         case 'ประถม1-3':
           baseRate = 100.0;
@@ -163,6 +334,7 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
           baseRate = 220.0;
           break;
       }
+
       setState(() {
         rates = [
           {'people': 1, 'price': durationHours * baseRate},
@@ -175,10 +347,17 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
 
   Future<void> _scheduleSession() async {
     if (selectedDays.isNotEmpty && startTime != null && endTime != null) {
+      // Prevent scheduling if it's a not-teaching (black) day
+      if (isNotTeachingDay) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('วันนี้ไม่สามารถทำการนัดหมายได้')),
+        );
+        return;
+      }
+
       List<String> sessionIds = [];
 
       for (DateTime selectedDay in selectedDays) {
-        // ตรวจสอบว่าเวลาที่เลือกทับซ้อนกับเวลาที่ถูกจองหรือไม่
         if (_isTimeOverlapping(startTime!, endTime!)) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('เวลาที่เลือกทับซ้อนกับเวลาที่ถูกจองแล้ว')),
@@ -186,19 +365,16 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
           return;
         }
 
-        // คำนวณจำนวนชั่วโมงและจำนวนเงิน
+        // Calculate the correct amount based on your rates
         final startMinutes = startTime!.hour * 60 + startTime!.minute;
         final endMinutes = endTime!.hour * 60 + endTime!.minute;
         final durationMinutes = endMinutes - startMinutes;
-        final durationHours =
-            (durationMinutes / 60).ceil(); // คำนวณจำนวนชั่วโมง
-        final hourlyRate = 100.0; // อัตราค่าบริการต่อชั่วโมงที่คุณกำหนด
-        final amount = durationHours *
-            hourlyRate *
-            selectedRate; // คำนวณจำนวนเงินให้ถูกต้อง
+        final durationHours = (durationMinutes / 60).ceil();
+        final amount =
+            rates.firstWhere((rate) => rate['people'] == selectedRate)['price'];
 
         final response = await http.post(
-          Uri.parse('http://10.5.50.82/tutoring_app/schedule_session.php'),
+          Uri.parse('http://10.5.50.138/tutoring_app/schedule_session.php'),
           headers: {'Content-Type': 'application/json'},
           body: json.encode({
             'student': widget.currentUser,
@@ -207,30 +383,44 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
             'startTime': startTime!.format(context),
             'endTime': endTime!.format(context),
             'rate': selectedRate,
-            'amount': amount.toString(), // ส่งจำนวนเงินเป็น string
+            'amount': amount.toString(),
           }),
         );
 
         if (response.statusCode == 200) {
-          final responseData = json.decode(response.body);
-          if (responseData['status'] == 'success') {
-            sessionIds.add(responseData['session_id'].toString());
-          } else {
+          try {
+            final responseData = json.decode(response.body);
+            if (responseData['status'] == 'success') {
+              sessionIds.add(responseData['session_id'].toString());
+
+              // Update the studentSessions to show it in red
+              setState(() {
+                studentSessions.add(selectedDay);
+              });
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Error: ${responseData['message']}')),
+              );
+            }
+          } catch (e) {
+            print('Error decoding JSON: $e');
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                  content:
-                      Text('ล้มเหลวในการนัดเรียน: ${responseData['message']}')),
+              SnackBar(content: Text('Invalid response from the server')),
             );
           }
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('ล้มเหลวในการนัดเรียน: ${response.body}')),
+            SnackBar(
+                content: Text(
+                    'Error: ${response.statusCode} - ${response.reasonPhrase}')),
           );
         }
       }
 
       if (sessionIds.isNotEmpty) {
-        await _sendMessageToTutor(sessionIds);
+        // ส่งข้อความไปหาติวเตอร์เมื่อมีการนัดหมายสำเร็จ
+        _sendMessageToTutor(sessionIds);
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('ทำการนัดเรียนสำเร็จ')),
         );
@@ -245,11 +435,13 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
   bool _isTimeOverlapping(TimeOfDay start, TimeOfDay end) {
     for (var time in scheduledTimesForDay) {
       TimeOfDay bookedStart = TimeOfDay(
-          hour: int.parse(time['start_time'].split(":")[0]),
-          minute: int.parse(time['start_time'].split(":")[1]));
+        hour: int.parse(time['start_time'].split(":")[0]),
+        minute: int.parse(time['start_time'].split(":")[1]),
+      );
       TimeOfDay bookedEnd = TimeOfDay(
-          hour: int.parse(time['end_time'].split(":")[0]),
-          minute: int.parse(time['end_time'].split(":")[1]));
+        hour: int.parse(time['end_time'].split(":")[0]),
+        minute: int.parse(time['end_time'].split(":")[1]),
+      );
 
       if (start.hour < bookedEnd.hour ||
           (start.hour == bookedEnd.hour && start.minute < bookedEnd.minute)) {
@@ -279,7 +471,7 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
     });
 
     final response = await http.post(
-      Uri.parse('http://10.5.50.82/tutoring_app/send_message.php'),
+      Uri.parse('http://10.5.50.138/tutoring_app/send_message.php'),
       headers: {'Content-Type': 'application/json'},
       body: payload,
     );
@@ -325,11 +517,33 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('ตารางเรียนกับติวเตอร์'),
-        backgroundColor: const Color.fromARGB(255, 28, 195, 198),
-        elevation: 0,
-      ),
+appBar: AppBar(
+  title: Text('ตารางเรียนกับติวเตอร์'),
+  backgroundColor: const Color.fromARGB(255, 28, 195, 198),
+  elevation: 0,
+  actions: [
+    IconButton(
+      icon: Icon(Icons.list_alt),
+      onPressed: () {
+        // Navigate to the booked sessions page
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => BookedSessionsScreen(
+              tutorName: widget.tutorName,
+              currentUser: widget.currentUser,
+              currentUserImage: widget.currentUserImage,
+              idUser: widget.idUser,
+              recipientImage: widget.recipientImage,
+              profileImageUrl: widget.profileImageUrl,
+            ),
+          ),
+        );
+      },
+    ),
+  ],
+),
+
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16.0),
         child: Column(
@@ -344,10 +558,6 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
                   children: [
                     Row(
                       children: [
-                        // CircleAvatar(
-                        //   backgroundImage: NetworkImage(widget.recipientImage),
-                        //   radius: 30,
-                        // ),
                         SizedBox(width: 20),
                         Text(
                           'ติวเตอร์: ${widget.tutorName}',
@@ -363,9 +573,7 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
                       focusedDay: _focusedDay,
                       firstDay: DateTime.utc(2024, 1, 1),
                       lastDay: DateTime.utc(2024, 12, 31),
-                      selectedDayPredicate: (day) {
-                        return selectedDays.contains(day);
-                      },
+                      selectedDayPredicate: (day) => selectedDays.contains(day),
                       onDaySelected: (selectedDay, focusedDay) {
                         setState(() {
                           if (selectedDays.contains(selectedDay)) {
@@ -374,32 +582,93 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
                             selectedDays.add(selectedDay);
                             _fetchScheduledTimesForDay(selectedDay);
                           }
+                          _focusedDay = focusedDay;
+
+                          // Check if it's a not-teaching day (black)
+                          isNotTeachingDay = notTeachingDays.contains(DateTime(
+                              selectedDay.year,
+                              selectedDay.month,
+                              selectedDay.day));
+
+                          _showDayInfo(
+                              selectedDay); // แสดงรายละเอียดเมื่อเลือกวัน
                         });
                       },
-                      onPageChanged: (focusedDay) {
-                        _focusedDay = focusedDay;
-                      },
                       eventLoader: (day) {
-                        if (scheduledDays.any(
-                            (scheduledDate) => isSameDay(scheduledDate, day))) {
-                          return ['Scheduled'];
+                        DateTime onlyDate =
+                            DateTime(day.year, day.month, day.day);
+
+                        // ตรวจสอบว่าวันนั้นมีนักเรียนจองในตาราง tutoring_sessions หรือไม่ -> สีแดง
+                        if (studentSessions.any((d) =>
+                            DateTime(d.year, d.month, d.day) == onlyDate)) {
+                          return [
+                            'StudentSession'
+                          ]; // สีแดงสำหรับการจองของนักเรียน
+                        }
+                        // ตรวจสอบว่าติวเตอร์กำหนดเวลาในตาราง tutor_schedule หรือไม่ -> สีฟ้า
+                        else if (teachingSpecificTime.any((d) =>
+                            DateTime(d.year, d.month, d.day) == onlyDate)) {
+                          return [
+                            'TeachingSpecificTime'
+                          ]; // สีฟ้าสำหรับเวลาที่ติวเตอร์กำหนด
+                        }
+                        // วันไม่รับสอน -> สีดำ
+                        else if (notTeachingDays.any((d) =>
+                            DateTime(d.year, d.month, d.day) == onlyDate)) {
+                          return ['NotTeaching']; // สีดำสำหรับวันไม่รับติว
                         }
                         return [];
                       },
-                      calendarStyle: CalendarStyle(
-                        todayDecoration: BoxDecoration(
-                          color: Colors.blueAccent.withOpacity(0.5),
-                          shape: BoxShape.circle,
-                        ),
-                        selectedDecoration: BoxDecoration(
-                          color: Colors.blueAccent,
-                          shape: BoxShape.circle,
-                        ),
-                        markersMaxCount: 1,
-                        markerDecoration: BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
-                        ),
+                      calendarBuilders: CalendarBuilders(
+                        markerBuilder: (context, day, events) {
+                          if (events.isNotEmpty) {
+                            // นักเรียนจองแล้ว -> สีแดง
+                            if (events.contains('StudentSession')) {
+                              return Positioned(
+                                bottom: 1,
+                                child: Container(
+                                  width: 7,
+                                  height: 7,
+                                  decoration: BoxDecoration(
+                                    color: Colors
+                                        .red, // สีแดงสำหรับการจองของนักเรียน
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              );
+                            }
+                            // ติวเตอร์กำหนดเวลา -> สีฟ้า
+                            else if (events.contains('TeachingSpecificTime')) {
+                              return Positioned(
+                                bottom: 1,
+                                child: Container(
+                                  width: 7,
+                                  height: 7,
+                                  decoration: BoxDecoration(
+                                    color: Colors
+                                        .blue, // สีฟ้าสำหรับเวลาที่ติวเตอร์กำหนด
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              );
+                            }
+                            // ไม่รับติว -> สีดำ
+                            else if (events.contains('NotTeaching')) {
+                              return Positioned(
+                                bottom: 1,
+                                child: Container(
+                                  width: 7,
+                                  height: 7,
+                                  decoration: BoxDecoration(
+                                    color: Colors.black, // สีดำสำหรับไม่รับติว
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              );
+                            }
+                          }
+                          return null;
+                        },
                       ),
                       headerStyle: HeaderStyle(
                         titleTextStyle: TextStyle(
@@ -476,7 +745,9 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
             SizedBox(height: 20),
             Center(
               child: ElevatedButton(
-                onPressed: _scheduleSession,
+                onPressed: isNotTeachingDay
+                    ? null
+                    : _scheduleSession, // Disable button if it's a black day
                 style: ButtonStyle(
                   backgroundColor: MaterialStateProperty.all<Color>(
                     const Color.fromARGB(255, 28, 195, 198),
@@ -492,6 +763,32 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
               ),
             ),
           ],
+        ),
+      ),
+      floatingActionButton: widget.currentUserRole == 'Tutor'
+          ? FloatingActionButton(
+              onPressed: () {
+                _navigateToEditSchedule();
+              },
+              child: Icon(Icons.edit),
+              backgroundColor: const Color.fromARGB(255, 28, 195, 198),
+            )
+          : null,
+    );
+  }
+
+  void _navigateToEditSchedule() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditScheduleScreen(
+          tutorName: widget.tutorName,
+          tutorImage: widget.tutorImage,
+          currentUser: widget.currentUser,
+          currentUserImage: widget.currentUserImage,
+          idUser: widget.idUser,
+          recipientImage: widget.recipientImage,
+          profileImageUrl: widget.profileImageUrl,
         ),
       ),
     );

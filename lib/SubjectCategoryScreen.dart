@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'SubjectDetailScreen.dart';
 
-class SubjectCategoryScreen extends StatelessWidget {
+class SubjectCategoryScreen extends StatefulWidget {
   final String category;
   final String userName;
   final String userRole;
@@ -14,92 +14,134 @@ class SubjectCategoryScreen extends StatelessWidget {
     required this.userName,
     required this.userRole,
     required this.profileImageUrl,
-    required this.idUser, required String recipientImage,
+    required this.idUser,
+    required String recipientImage,
   }) : super(key: key);
 
   @override
+  _SubjectCategoryScreenState createState() => _SubjectCategoryScreenState();
+}
+
+class _SubjectCategoryScreenState extends State<SubjectCategoryScreen> {
+  TextEditingController _searchController = TextEditingController();
+  String searchQuery = '';
+
+  @override
   Widget build(BuildContext context) {
-    List<Map<String, dynamic>> subjects = _getSubjectsByCategory(category);
+    List<Map<String, dynamic>> subjects =
+        _getSubjectsByCategory(widget.category);
+
+    // กรองวิชาโดยใช้ searchQuery
+    List<Map<String, dynamic>> filteredSubjects = subjects
+        .where((subject) =>
+            subject['name'].toLowerCase().contains(searchQuery.toLowerCase()))
+        .toList();
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('$category Subjects'),
+        title: Text('${widget.category} Subjects'),
         backgroundColor: const Color.fromARGB(255, 28, 195, 198),
         elevation: 0,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.search),
-            onPressed: () {
-              // Implement search functionality
-            },
+        // actions: [
+        //   IconButton(
+        //     icon: Icon(Icons.search),
+        //     onPressed: () {
+        //       // Implement search functionality
+        //     },
+        //   ),
+        // ],
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'ค้นหาวิชา...',
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10.0),
+                ),
+              ),
+              onChanged: (query) {
+                setState(() {
+                  searchQuery = query;
+                });
+              },
+            ),
+          ),
+          Expanded(
+            child: filteredSubjects.isNotEmpty
+                ? GridView.builder(
+                    padding: EdgeInsets.all(16.0),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 16.0,
+                      mainAxisSpacing: 16.0,
+                      childAspectRatio: 3 / 2,
+                    ),
+                    itemCount: filteredSubjects.length,
+                    itemBuilder: (context, index) {
+                      final subject = filteredSubjects[index];
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => SubjectDetailScreen(
+                                subject: subject,
+                                userName: widget.userName,
+                                userRole: widget.userRole,
+                                profileImageUrl: widget.profileImageUrl,
+                                userId: widget.idUser,
+                                tutorId: '',
+                                idUser: widget.idUser,
+                                currentUserRole: '',
+                              ),
+                            ),
+                          );
+                        },
+                        child: Card(
+                          elevation: 4,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(15),
+                              color: Colors.blue[50],
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(subject['icon'],
+                                    size: 40, color: Colors.blue),
+                                SizedBox(height: 10),
+                                Text(
+                                  subject['name'],
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  )
+                : Center(
+                    child: Text(
+                      'No subjects available in this category',
+                      style: TextStyle(fontSize: 18, color: Colors.grey),
+                    ),
+                  ),
           ),
         ],
       ),
-      body: subjects.isNotEmpty
-          ? GridView.builder(
-              padding: EdgeInsets.all(16.0),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 16.0,
-                mainAxisSpacing: 16.0,
-                childAspectRatio: 3 / 2,
-              ),
-              itemCount: subjects.length,
-              itemBuilder: (context, index) {
-                final subject = subjects[index];
-                return GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => SubjectDetailScreen(
-                          subject: subject,
-                          userName: userName,
-                          userRole: userRole,
-                          profileImageUrl: profileImageUrl,
-                          userId: idUser,
-                          tutorId: '',
-                          idUser: idUser,
-                        ),
-                      ),
-                    );
-                  },
-                  child: Card(
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(15),
-                        color: Colors.blue[50],
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(subject['icon'], size: 40, color: Colors.blue),
-                          SizedBox(height: 10),
-                          Text(
-                            subject['name'],
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
-            )
-          : Center(
-              child: Text(
-                'No subjects available in this category',
-                style: TextStyle(fontSize: 18, color: Colors.grey),
-              ),
-            ),
     );
   }
 

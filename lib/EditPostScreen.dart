@@ -44,7 +44,7 @@ class _EditPostScreenState extends State<EditPostScreen> {
     });
 
     final response = await http.post(
-      Uri.parse('http://10.5.50.82/tutoring_app/update_post_student.php'),
+      Uri.parse('http://10.5.50.138/tutoring_app/update_post_student.php'),
       body: {
         'postId': widget.postId,
         'message': _messageController.text,
