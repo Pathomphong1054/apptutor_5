@@ -5,17 +5,17 @@ header('Content-Type: application/json');
 
 $data = json_decode(file_get_contents("php://input"), true);
 
-$user_name = $data['user_name'] ?? '';
+$student_id = $data['student_id'] ?? ''; // เปลี่ยนเป็น student_id
 
-if (empty($user_name)) {
-    echo json_encode(['status' => 'error', 'message' => 'User name is missing']);
+if (empty($student_id)) {
+    echo json_encode(['status' => 'error', 'message' => 'Student ID is missing']);
     exit();
 }
 
-// ลบโพสต์ออกจากฐานข้อมูลตาม userName
-$query = "DELETE FROM port_messages WHERE userName = ?";
+// ลบโพสต์ออกจากฐานข้อมูลตาม student_id
+$query = "DELETE FROM port_messages WHERE student_id = ?";
 $stmt = $con->prepare($query);
-$stmt->bind_param("s", $user_name);
+$stmt->bind_param("i", $student_id); // เปลี่ยนเป็น integer (i)
 
 if ($stmt->execute()) {
     echo json_encode(['status' => 'success']);

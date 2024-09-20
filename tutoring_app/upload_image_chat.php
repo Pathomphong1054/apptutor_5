@@ -10,16 +10,33 @@ if (isset($_FILES['file']) && isset($_POST['sender']) && isset($_POST['recipient
 
     $targetDir = "uploads/";
     $fileName = basename($_FILES["file"]["name"]);
-    $targetFilePath = $targetDir . $fileName;
+    $fileType = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+
+    // ตรวจสอบชนิดไฟล์
+    $allowedTypes = ['jpg', 'jpeg', 'png', 'gif'];
+    if (!in_array($fileType, $allowedTypes)) {
+        echo json_encode(['status' => 'error', 'message' => 'Invalid file type']);
+        exit();
+    }
+
+    // เพิ่มตัวระบุสุ่มในชื่อไฟล์เพื่อป้องกันไฟล์ชื่อซ้ำกัน
+    $newFileName = uniqid() . '.' . $fileType;
+    $targetFilePath = $targetDir . $newFileName;
     $fullUrl = "http://10.5.50.82/tutoring_app/$targetFilePath"; 
 
     if (move_uploaded_file($_FILES["file"]["tmp_name"], $targetFilePath)) {
-        $query = "INSERT INTO messages (sender, recipient, message, session_id, file_path) VALUES ('$sender', '$recipient', '[Image]', '$session_id', '$fullUrl')";
-        if (mysqli_query($con, $query)) {
+        // ใช้ prepared statement เพื่อป้องกัน SQL injection
+        $query = "INSERT INTO messages (sender_id, recipient_id, message, session_id, file_path) VALUES (?, ?, '[Image]', ?, ?)";
+        $stmt = $con->prepare($query);
+        $stmt->bind_param('ssss', $sender, $recipient, $session_id, $fullUrl);
+
+        if ($stmt->execute()) {
             echo json_encode(['status' => 'success', 'file_path' => $fullUrl]);
         } else {
-            echo json_encode(['status' => 'error', 'message' => mysqli_error($con)]);
+            echo json_encode(['status' => 'error', 'message' => $stmt->error]);
         }
+
+        $stmt->close();
     } else {
         echo json_encode(['status' => 'error', 'message' => 'Failed to upload image']);
     }
@@ -27,4 +44,5 @@ if (isset($_FILES['file']) && isset($_POST['sender']) && isset($_POST['recipient
     echo json_encode(['status' => 'error', 'message' => 'Invalid input']);
 }
 
+$con->close();
 ?>

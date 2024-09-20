@@ -18,9 +18,9 @@ if (empty($user)) {
 error_log("Fetching conversations for user: " . $user);
 
 $query = "
-    SELECT sender, recipient, message, timestamp 
+    SELECT sender_id, recipient_id, message, timestamp 
     FROM messages 
-    WHERE sender='$user' OR recipient='$user' 
+    WHERE sender_id='$user' OR recipient_id='$user' 
     ORDER BY timestamp DESC";
 
 $result = mysqli_query($con, $query);
@@ -33,7 +33,7 @@ if (!$result) {
 $conversations = array();
 $seen = array();
 while ($row = mysqli_fetch_assoc($result)) {
-    $conversation_with = $row['sender'] === $user ? $row['recipient'] : $row['sender'];
+    $conversation_with = $row['sender_id'] == $user ? $row['recipient_id'] : $row['sender_id'];
     
     if (in_array($conversation_with, $seen)) {
         continue;
@@ -41,12 +41,13 @@ while ($row = mysqli_fetch_assoc($result)) {
     
     $seen[] = $conversation_with;
     
+    // Fetch recipient information from students and tutors tables by ID
     $recipient_query = "
-        SELECT name, profile_images 
-        FROM students WHERE name='$conversation_with' 
+        SELECT id, name, profile_images 
+        FROM students WHERE id='$conversation_with' 
         UNION 
-        SELECT name, profile_images 
-        FROM tutors WHERE name='$conversation_with'";
+        SELECT id, name, profile_images 
+        FROM tutors WHERE id='$conversation_with'";
     $recipient_result = mysqli_query($con, $recipient_query);
     $recipient_info = mysqli_fetch_assoc($recipient_result);
 

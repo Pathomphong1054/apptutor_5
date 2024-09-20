@@ -34,19 +34,28 @@ if ($stmt === false) {
 $stmt->bind_param('ii', $is_accepted, $request_id);
 
 if ($stmt->execute()) {
-    // ตรวจสอบว่าการตอบรับคำขอเป็นการยอมรับหรือไม่
-    if ($is_accepted == 1) {
-        // ถ้ารับคำขอเรียบร้อย อาจสร้าง sessionId หรือจัดการเพิ่มเติม
-        $sessionId = uniqid();  // ตัวอย่าง sessionId ที่สร้างขึ้นใหม่
-        echo json_encode([
-            'status' => 'success', 
-            'message' => 'Request status updated', 
-            'sessionId' => $sessionId
-        ]);
+    // ตรวจสอบว่าแถวใดๆ ถูกอัปเดตหรือไม่
+    if ($stmt->affected_rows > 0) {
+        if ($is_accepted == 1) {
+            // ถ้ารับคำขอเรียบร้อย อาจสร้าง sessionId หรือจัดการเพิ่มเติม
+            $sessionId = uniqid();  // ตัวอย่าง sessionId ที่สร้างขึ้นใหม่
+            // คุณอาจบันทึก sessionId ลงในฐานข้อมูลที่นี่ถ้าต้องการ
+
+            echo json_encode([
+                'status' => 'success', 
+                'message' => 'Request accepted successfully', 
+                'sessionId' => $sessionId
+            ]);
+        } else {
+            echo json_encode([
+                'status' => 'success', 
+                'message' => 'Request declined successfully'
+            ]);
+        }
     } else {
         echo json_encode([
-            'status' => 'success', 
-            'message' => 'Request status updated'
+            'status' => 'error', 
+            'message' => 'No rows updated. Invalid request ID.'
         ]);
     }
 } else {
@@ -57,5 +66,5 @@ if ($stmt->execute()) {
 }
 
 $stmt->close();
-$con->close();
+$con->close();  
 ?>

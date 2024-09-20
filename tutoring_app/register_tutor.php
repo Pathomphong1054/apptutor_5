@@ -13,10 +13,9 @@ $category = $_POST['category'];
 $subject = $_POST['subject'];
 $topic = $_POST['topic'];
 $address = $_POST['address'];
-$bankName = $_POST['bank_name'];
-$accountName = $_POST['account_name'];
-$accountNumber = $_POST['account_number'];
-$educationLevel = $_POST['education_level'];  // รับค่า education level
+$educationLevel = $_POST['education_level'];  
+$latitude = $_POST['latitude'];  // รับค่า latitude
+$longitude = $_POST['longitude'];  // รับค่า longitude
 $role = 'Tutor';
 $encrypted_pwd = password_hash($password, PASSWORD_BCRYPT);
 
@@ -53,25 +52,13 @@ if ($count > 0) {
 
     try {
         // Insert tutor data
-        $stmt = $con->prepare("INSERT INTO tutors(name, password, email, category, subject, topic, address, profile_images, resumes_images, education_level, role) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("sssssssssss", $name, $encrypted_pwd, $email, $category, $subject, $topic, $address, $profileImage, $resumeFile, $educationLevel, $role);
+        $stmt = $con->prepare("INSERT INTO tutors(name, password, email, category, subject, topic, address, latitude, longitude, profile_images, resumes_images, education_level, role) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("sssssssssssss", $name, $encrypted_pwd, $email, $category, $subject, $topic, $address, $latitude, $longitude, $profileImage, $resumeFile, $educationLevel, $role);
 
         if ($stmt->execute()) {
-            $tutorId = $stmt->insert_id;
-
-            // Insert bank account data
-            $stmt = $con->prepare("INSERT INTO bank_accounts(tutor_id, bank_name, account_name, account_number) VALUES (?, ?, ?, ?)");
-            $stmt->bind_param("isss", $tutorId, $bankName, $accountName, $accountNumber);
-
-            if ($stmt->execute()) {
-                // หากสำเร็จ, commit transaction
-                $con->commit();
-                echo json_encode(['status' => 'success', 'message' => 'Registration succeeded']);
-            } else {
-                // หากล้มเหลว, rollback transaction
-                $con->rollback();
-                echo json_encode(['status' => 'error', 'message' => 'Bank account registration failed']);
-            }
+            // หากสำเร็จ, commit transaction
+            $con->commit();
+            echo json_encode(['status' => 'success', 'message' => 'Registration succeeded']);
         } else {
             // หากล้มเหลว, rollback transaction
             $con->rollback();

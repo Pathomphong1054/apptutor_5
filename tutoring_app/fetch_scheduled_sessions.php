@@ -9,18 +9,31 @@ if (empty($tutor)) {
     exit;
 }
 
-$query = $con->prepare("SELECT * FROM tutoring_sessions WHERE tutor = ?");
-$query->bind_param("s", $tutor);
-$query->execute();
-$result = $query->get_result();
+// Query for tutoring_sessions
+$query1 = $con->prepare("SELECT * FROM tutoring_sessions WHERE tutor = ?");
+$query1->bind_param("s", $tutor);
+$query1->execute();
+$result1 = $query1->get_result();
 
 $sessions = array();
-while ($row = $result->fetch_assoc()) {
-    $sessions[] = $row;
+while ($row1 = $result1->fetch_assoc()) {
+    $sessions[] = array_merge($row1, array("source" => "tutoring_sessions")); // Add source identifier
+}
+
+// Query for tutor_schedule
+$query2 = $con->prepare("SELECT * FROM tutor_schedule WHERE tutor = ?");
+$query2->bind_param("s", $tutor);
+$query2->execute();
+$result2 = $query2->get_result();
+
+while ($row2 = $result2->fetch_assoc()) {
+    $sessions[] = array_merge($row2, array("source" => "tutor_schedule")); // Add source identifier
 }
 
 echo json_encode(array("status" => "success", "sessions" => $sessions));
 
-$query->close();
+// Close queries and connection
+$query1->close();
+$query2->close();
 $con->close();
 ?>

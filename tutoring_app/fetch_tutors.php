@@ -11,7 +11,7 @@ $stmt = $con->prepare("
     SELECT tutors.id, tutors.name, tutors.category, tutors.subject, tutors.topic, tutors.email, tutors.address, tutors.profile_images, 
            IFNULL(AVG(reviews.rating), 0) as average_rating
     FROM tutors
-    LEFT JOIN reviews ON tutors.name = reviews.tutor_name
+    LEFT JOIN reviews ON tutors.id = reviews.tutor_id
     GROUP BY tutors.name, tutors.category, tutors.subject, tutors.topic, tutors.email, tutors.address, tutors.profile_images
 ");
 

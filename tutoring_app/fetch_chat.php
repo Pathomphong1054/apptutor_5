@@ -3,20 +3,27 @@ require 'db_connection.php';
 
 header('Content-Type: application/json');
 
-$sender = $_GET['sender'] ?? '';
-$recipient = $_GET['recipient'] ?? '';
+$sender_id = $_GET['sender_id'] ?? '';
+$recipient_id = $_GET['recipient_id'] ?? '';
+$session_id = $_GET['session_id'] ?? '';
 
-if (empty($sender) || empty($recipient)) {
-    echo json_encode(['status' => 'error', 'message' => 'Sender or recipient parameter is missing']);
+if (empty($sender_id) || empty($recipient_id) || empty($session_id)) {
+    echo json_encode(['status' => 'error', 'message' => 'Sender_id, recipient_id, or session ID parameter is missing']);
     exit();
 }
 
+// Prepared statement to prevent SQL injection
 $query = "SELECT * FROM messages 
-          WHERE (sender='$sender' AND recipient='$recipient') 
-          OR (sender='$recipient' AND recipient='$sender') 
+          WHERE ((sender_id = ? AND recipient_id = ?) 
+          OR (sender_id = ? AND recipient_id = ?)) 
+          AND session_id = ?
           ORDER BY timestamp ASC";
 
-$result = mysqli_query($con, $query);
+$stmt = $con->prepare($query);
+$stmt->bind_param('iiiii', $sender_id, $recipient_id, $recipient_id, $sender_id, $session_id);
+$stmt->execute();
+
+$result = $stmt->get_result();
 
 if (!$result) {
     echo json_encode(['status' => 'error', 'message' => mysqli_error($con)]);
@@ -24,19 +31,22 @@ if (!$result) {
 }
 
 $messages = array();
-while ($row = mysqli_fetch_assoc($result)) {
+while ($row = $result->fetch_assoc()) {
     $messages[] = [
         'id' => $row['id'],
-        'sender' => $row['sender'],
-        'recipient' => $row['recipient'],
+        'sender_id' => $row['sender_id'],
+        'recipient_id' => $row['recipient_id'],
         'message' => $row['message'],
         'timestamp' => $row['timestamp'],
-        'latitude' => $row['latitude'] ?? '',
-        'longitude' => $row['longitude'] ?? '',
-        'session_id' => $row['session_id'] ?? '',
-        'image_url' => $row['file_path'] ?? ''  // Added file_path to response
+        'latitude' => !empty($row['latitude']) ? $row['latitude'] : null,
+        'longitude' => !empty($row['longitude']) ? $row['longitude'] : null,
+        'session_id' => !empty($row['session_id']) ? $row['session_id'] : null,
+        'image_url' => !empty($row['file_path']) ? $row['file_path'] : null
     ];
 }
 
 echo json_encode(['status' => 'success', 'messages' => $messages]);
+
+$stmt->close();
+$con->close();
 ?>
