@@ -49,7 +49,7 @@ class _SubjectDetailScreenState extends State<SubjectDetailScreen> {
     });
 
     var url = Uri.parse(
-        'http://10.5.50.138/tutoring_app/fetch_tutors_by_subject.php?subject=${widget.subject['name']}');
+        'http://10.5.50.82/tutoring_app/fetch_tutors_by_subject.php?subject=${widget.subject['name']}');
     try {
       var response = await http.get(url);
 
@@ -85,14 +85,14 @@ class _SubjectDetailScreenState extends State<SubjectDetailScreen> {
         'message': message,
         'dateTime': dateTime,
         'location': location,
-        'userName': widget.userName,
+        'student_id': widget.idUser, // ต้องเป็นค่าตัวเลข (ID) ของผู้ใช้
         'profileImageUrl': widget.profileImageUrl,
         'subject': widget.subject['name'],
       };
 
       print('Posting message: $messageObject');
 
-      var url = Uri.parse('http://10.5.50.138/tutoring_app/post_message.php');
+      var url = Uri.parse('http://10.5.50.82/tutoring_app/post_message.php');
       var response =
           await http.post(url, body: json.encode(messageObject), headers: {
         'Content-Type': 'application/json',
@@ -312,7 +312,7 @@ class _SubjectDetailScreenState extends State<SubjectDetailScreen> {
                       final subject = tutor['subject'] ?? 'No Subject';
                       final profileImageUrl = tutor['profile_images'] != null &&
                               tutor['profile_images'].isNotEmpty
-                          ? 'http://10.5.50.138/tutoring_app/uploads/' +
+                          ? 'http://10.5.50.82/tutoring_app/uploads/' +
                               tutor['profile_images']
                           : 'images/default_profile.jpg';
                       final username = tutor['name'] ?? 'No Username';

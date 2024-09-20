@@ -34,7 +34,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
   Future<void> _fetchNotifications() async {
     final response = await http.get(Uri.parse(
-        'http://10.5.50.138/tutoring_app/fetch_notifications.php?username=${widget.userName}&role=${widget.userRole}'));
+        'http://10.5.50.82/tutoring_app/fetch_notifications.php?username=${widget.userName}&role=${widget.userRole}'));
 
     if (response.statusCode == 200) {
       try {
@@ -90,7 +90,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
   Future<void> _updateNotificationStatus(int notificationId) async {
     final response = await http.post(
-      Uri.parse('http://10.5.50.138/tutoring_app/update_notification.php'),
+      Uri.parse('http://10.5.50.82/tutoring_app/update_notification.php'),
       body: {'notification_id': notificationId.toString()},
     );
 
@@ -143,7 +143,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
   Future<void> _respondToRequest(int notificationId, bool isAccepted) async {
     final response = await http.post(
-      Uri.parse('http://10.5.50.138/tutoring_app/respond_to_notification.php'),
+      Uri.parse('http://10.5.50.82/tutoring_app/respond_to_notification.php'),
       body: {
         'notification_id': notificationId.toString(),
         'is_accepted': isAccepted ? '1' : '0',
@@ -172,7 +172,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
   Future<void> _deleteNotification(int notificationId) async {
     try {
       final response = await http.post(
-        Uri.parse('http://10.5.50.138/tutoring_app/delete_notification.php'),
+        Uri.parse('http://10.5.50.82/tutoring_app/delete_notification.php'),
         body: {'notification_id': notificationId.toString()},
       );
 

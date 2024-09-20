@@ -180,7 +180,7 @@ class _TutorRegistrationScreenState extends State<TutorRegistrationScreen> {
   Future<void> _getAddressFromCoordinates(
       double latitude, double longitude) async {
     final apiKey =
-        'AIzaSyAijDTG6loIcfDwQyU94VTK0ru1-55OylI'; // ใส่ API Key ของคุณ
+        'AIzaSyAifMkvdmH00OHXVAw1RNV4nsL56vQWAzQ'; // ใส่ API Key ของคุณ AIzaSyCCCIe9sGEz1HsKvf2Hly7It5_uIDYbgPI
     final url = Uri.parse(
         'https://maps.googleapis.com/maps/api/geocode/json?latlng=$latitude,$longitude&key=$apiKey');
 
@@ -230,6 +230,14 @@ class _TutorRegistrationScreenState extends State<TutorRegistrationScreen> {
     }
   }
 
+// ฟังก์ชันสำหรับตรวจสอบรูปแบบอีเมล
+  bool isValidEmail(String email) {
+    final RegExp emailRegExp = RegExp(
+      r'^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$',
+    );
+    return emailRegExp.hasMatch(email);
+  }
+
   Future<void> registerTutor(BuildContext context) async {
     final String name = _nameController.text;
     final String email = _emailController.text;
@@ -238,19 +246,32 @@ class _TutorRegistrationScreenState extends State<TutorRegistrationScreen> {
     final String category = _selectedCategory!;
     final String subject = _selectedSubject!;
     final String topic = _selectedTopic!;
-    final String address = _addressController.text; // ใช้ที่อยู่จากแผนที่
-    final String latitude = _latitudeController.text; // ใช้พิกัดละติจูด
-    final String longitude = _longitudeController.text; // ใช้พิกัดลองจิจูด
+    final String address = _addressController.text;
+    final String latitude = _latitudeController.text;
+    final String longitude = _longitudeController.text;
     final String educationLevel = _selectedEducationLevel!;
 
-    // ตรวจสอบว่าได้เลือกที่อยู่หรือยัง
-    if (address.isEmpty || latitude.isEmpty || longitude.isEmpty) {
+    // ตรวจสอบว่ากรอกข้อมูลครบถ้วนหรือไม่
+    if (name.isEmpty ||
+        email.isEmpty ||
+        password.isEmpty ||
+        confirmPassword.isEmpty ||
+        address.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please select an address')),
+        SnackBar(content: Text('Please fill in all required fields')),
       );
       return;
     }
 
+    // ตรวจสอบรูปแบบอีเมล
+    if (!isValidEmail(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please enter a valid email address')),
+      );
+      return;
+    }
+
+    // ตรวจสอบรหัสผ่าน
     if (password != confirmPassword) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Passwords do not match')),
@@ -258,10 +279,19 @@ class _TutorRegistrationScreenState extends State<TutorRegistrationScreen> {
       return;
     }
 
+    // ตรวจสอบที่อยู่
+    if (address.isEmpty || latitude.isEmpty || longitude.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please select an address')),
+      );
+      return;
+    }
+
     var request = http.MultipartRequest(
       'POST',
-      Uri.parse('http://10.5.50.138/tutoring_app/register_tutor.php'),
+      Uri.parse('http://10.5.50.82/tutoring_app/register_tutor.php'),
     );
+
     request.fields['name'] = name;
     request.fields['email'] = email;
     request.fields['password'] = password;
@@ -269,8 +299,8 @@ class _TutorRegistrationScreenState extends State<TutorRegistrationScreen> {
     request.fields['subject'] = subject;
     request.fields['topic'] = topic;
     request.fields['address'] = address;
-    request.fields['latitude'] = latitude; // ส่งพิกัดละติจูดไปเซิร์ฟเวอร์
-    request.fields['longitude'] = longitude; // ส่งพิกัดลองจิจูดไปเซิร์ฟเวอร์
+    request.fields['latitude'] = latitude;
+    request.fields['longitude'] = longitude;
     request.fields['education_level'] = educationLevel;
 
     if (_profileImage != null) {
@@ -309,7 +339,7 @@ class _TutorRegistrationScreenState extends State<TutorRegistrationScreen> {
                 userName: userName,
                 userRole: 'Tutor',
                 profileImageUrl: responseData['profile_image'] != null
-                    ? 'http://10.5.50.138/tutoring_app/uploads/' +
+                    ? 'http://10.5.50.82/tutoring_app/uploads/' +
                         responseData['profile_image']
                     : 'images/default_profile.jpg',
                 currentUserRole: 'Tutor',

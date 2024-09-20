@@ -15,7 +15,8 @@ class StudentRequestsScreen extends StatefulWidget {
       required String userRole,
       required this.idUser,
       required this.profileImageUrl,
-      required String recipientImage, required this.currentUserRole});
+      required String recipientImage,
+      required this.currentUserRole});
 
   @override
   _StudentRequestsScreenState createState() => _StudentRequestsScreenState();
@@ -38,7 +39,8 @@ class _StudentRequestsScreenState extends State<StudentRequestsScreen> {
     });
 
     var url = Uri.parse(
-        'http://10.5.50.138/tutoring_app/fetch_requests.php?recipient=${widget.userName}');
+        'http://10.5.50.82/tutoring_app/fetch_requests.php?recipient_id=${widget.idUser}'); // ส่งค่า idUser แทน userName
+
     try {
       var response = await http.get(url);
 
@@ -69,7 +71,7 @@ class _StudentRequestsScreenState extends State<StudentRequestsScreen> {
   Future<void> _respondToRequest(int requestId, bool isAccepted,
       String tutorName, String tutorProfileImage) async {
     var response = await http.post(
-      Uri.parse('http://10.5.50.138/tutoring_app/respond_request.php'),
+      Uri.parse('http://10.5.50.82/tutoring_app/respond_request.php'),
       body: json.encode({
         'request_id': requestId,
         'is_accepted': isAccepted ? 1 : 0,
@@ -90,7 +92,7 @@ class _StudentRequestsScreenState extends State<StudentRequestsScreen> {
 
         // ลบโพสต์ออกจากฐานข้อมูล
         if (isAccepted) {
-          await _deletePostByUserName(tutorName);
+          await _deletePostByStudentId(tutorName);
         }
 
         if (isAccepted && responseData['sessionId'] != null) {
@@ -110,24 +112,42 @@ class _StudentRequestsScreenState extends State<StudentRequestsScreen> {
   }
 
   Future<void> _deleteRequestFromDatabase(int requestId) async {
-    var response = await http.post(
-      Uri.parse('http://10.5.50.138/tutoring_app/delete_request.php'),
-      body: json.encode({
-        'request_id': requestId,
-      }),
-      headers: {'Content-Type': 'application/json'},
-    );
+    try {
+      var response = await http.post(
+        Uri.parse('http://10.5.50.82/tutoring_app/delete_request.php'),
+        body: json.encode({
+          'request_id': requestId,
+        }),
+        headers: {'Content-Type': 'application/json'},
+      );
 
-    if (response.statusCode != 200) {
-      _showErrorSnackBar('Failed to delete request from database');
+      if (response.statusCode == 200) {
+        var responseData = json.decode(response.body);
+
+        // ตรวจสอบว่า API ตอบกลับสถานะ success
+        if (responseData['status'] == 'success') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Request deleted successfully')),
+          );
+        } else {
+          // แสดงข้อความ error จาก API
+          _showErrorSnackBar(
+              'Failed to delete request: ${responseData['message']}');
+        }
+      } else {
+        _showErrorSnackBar(
+            'Failed to delete request. Status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      _showErrorSnackBar('An error occurred: $e');
     }
   }
 
-  Future<void> _deletePostByUserName(String userName) async {
+  Future<void> _deletePostByStudentId(String studentId) async {
     var response = await http.post(
-      Uri.parse('http://10.5.50.138/tutoring_app/delete_post_by_username.php'),
+      Uri.parse('http://10.5.50.82/tutoring_app/delete_post_by_student_id.php'),
       body: json.encode({
-        'user_name': userName,
+        'student_id': studentId, // เปลี่ยนจาก user_name เป็น student_id
       }),
       headers: {'Content-Type': 'application/json'},
     );
@@ -218,8 +238,10 @@ class _StudentRequestsScreenState extends State<StudentRequestsScreen> {
                   itemCount: requests.length,
                   itemBuilder: (context, index) {
                     final request = requests[index];
-                    final tutorName = request['sender'];
-                    final tutorProfileImage = request['profileImage'];
+                    final tutorName = request['sender_name'] ??
+                        'Unknown'; // เปลี่ยนเป็น sender_name
+                    final tutorProfileImage = request['profile_image'] ??
+                        ''; // ใช้ profile_image จากฐานข้อมูล
                     final isAccepted = request['is_accepted'] == 1;
 
                     return Card(
@@ -234,21 +256,22 @@ class _StudentRequestsScreenState extends State<StudentRequestsScreen> {
                           onTap: () =>
                               _viewTutorProfile(tutorName, tutorProfileImage),
                           child: CircleAvatar(
-                            backgroundImage: tutorProfileImage != null &&
-                                    tutorProfileImage.isNotEmpty
+                            backgroundImage: tutorProfileImage.isNotEmpty
                                 ? NetworkImage(
-                                    'http://10.5.50.138/tutoring_app/uploads/$tutorProfileImage')
+                                    'http://10.5.50.82/tutoring_app/uploads/$tutorProfileImage')
                                 : AssetImage('images/default_profile.jpg')
                                     as ImageProvider,
                           ),
                         ),
                         title: Text(
-                          request['sender'],
+                          tutorName, // ใช้คีย์ sender_name เพื่อแสดงชื่อ
                           style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 16),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
                         ),
                         subtitle: Text(
-                          request['message'],
+                          request['message'], // แสดงข้อความที่ส่งมา
                           style: TextStyle(color: Colors.grey[600]),
                         ),
                         trailing: isAccepted
@@ -258,7 +281,9 @@ class _StudentRequestsScreenState extends State<StudentRequestsScreen> {
                                 children: [
                                   TextButton(
                                     onPressed: () {
-                                      int requestId = int.parse(request['id']);
+                                      int requestId = request[
+                                          'id']; // ตรวจสอบว่าค่า 'id' ตรงกับฐานข้อมูล
+                                      print('Request ID: $requestId');
                                       _respondToRequest(requestId, true,
                                           tutorName, tutorProfileImage);
                                     },
@@ -269,8 +294,9 @@ class _StudentRequestsScreenState extends State<StudentRequestsScreen> {
                                   ),
                                   TextButton(
                                     onPressed: () {
-                                      int requestId = int.parse(request['id']);
-                                      _respondToRequest(requestId, false,
+                                      int requestId = request[
+                                          'id']; // ใช้ request['id'] โดยไม่ต้องแปลงเป็น String
+                                      _respondToRequest(requestId, true,
                                           tutorName, tutorProfileImage);
                                     },
                                     style: TextButton.styleFrom(
@@ -282,8 +308,7 @@ class _StudentRequestsScreenState extends State<StudentRequestsScreen> {
                               ),
                       ),
                     );
-                  },
-                ),
+                  }),
     );
   }
 }

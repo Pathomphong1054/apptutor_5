@@ -517,33 +517,32 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-appBar: AppBar(
-  title: Text('ตารางเรียนกับติวเตอร์'),
-  backgroundColor: const Color.fromARGB(255, 28, 195, 198),
-  elevation: 0,
-  actions: [
-    IconButton(
-      icon: Icon(Icons.list_alt),
-      onPressed: () {
-        // Navigate to the booked sessions page
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => BookedSessionsScreen(
-              tutorName: widget.tutorName,
-              currentUser: widget.currentUser,
-              currentUserImage: widget.currentUserImage,
-              idUser: widget.idUser,
-              recipientImage: widget.recipientImage,
-              profileImageUrl: widget.profileImageUrl,
-            ),
+      appBar: AppBar(
+        title: Text('ตารางเรียนกับติวเตอร์'),
+        backgroundColor: const Color.fromARGB(255, 28, 195, 198),
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.list_alt),
+            onPressed: () {
+              // Navigate to the booked sessions page
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => BookedSessionsScreen(
+                    tutorName: widget.tutorName,
+                    currentUser: widget.currentUser,
+                    currentUserImage: widget.currentUserImage,
+                    idUser: widget.idUser,
+                    recipientImage: widget.recipientImage,
+                    profileImageUrl: widget.profileImageUrl,
+                  ),
+                ),
+              );
+            },
           ),
-        );
-      },
-    ),
-  ],
-),
-
+        ],
+      ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16.0),
         child: Column(

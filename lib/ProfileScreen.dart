@@ -45,7 +45,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     try {
       final url = Uri.parse(
-          'http://10.5.50.138/tutoring_app/get_${widget.userRole}_profile.php?username=${widget.username}');
+          'http://10.5.50.82/tutoring_app/get_${widget.userRole}_profile.php?username=${widget.username}');
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
@@ -98,7 +98,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       var request = http.MultipartRequest(
         'POST',
         Uri.parse(
-            'http://10.5.50.138/tutoring_app/upload_profile_${widget.userRole}.php'),
+            'http://10.5.50.82/tutoring_app/upload_profile_${widget.userRole}.php'),
       );
       request.files.add(
         await http.MultipartFile.fromPath(
@@ -146,7 +146,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       try {
         var response = await http.post(
           Uri.parse(
-              'http://10.5.50.138/tutoring_app/update_${widget.userRole}_profile.php'),
+              'http://10.5.50.82/tutoring_app/update_${widget.userRole}_profile.php'),
           body: {
             'username': widget.username,
             'name': _nameController.text,

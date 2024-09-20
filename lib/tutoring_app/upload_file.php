@@ -10,7 +10,7 @@ $response = [];
 if (move_uploaded_file($_FILES["file"]["tmp_name"], $targetFile)) {
     $response = [
         'status' => 'success',
-        'file_url' => 'http://10.5.50.138/tutoring_app/' . $targetFile
+        'file_url' => 'http://10.5.50.82/tutoring_app/' . $targetFile
     ];
 } else {
     $response = [

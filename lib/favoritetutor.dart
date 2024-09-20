@@ -15,7 +15,8 @@ class FavoriteTutorsScreen extends StatefulWidget {
     required this.userId,
     required this.currentUserImage,
     required this.idUser,
-    required String recipientImage, required this.currentUserRole,
+    required String recipientImage,
+    required this.currentUserRole,
   });
 
   @override
@@ -35,7 +36,7 @@ class _FavoriteTutorsScreenState extends State<FavoriteTutorsScreen> {
 
   Future<void> _loadFavoriteTutors() async {
     final url =
-        'http://10.5.50.138/tutoring_app/get_favorite_tutors.php?student_id=${widget.userId}';
+        'http://10.5.50.82/tutoring_app/get_favorite_tutors.php?student_id=${widget.userId}';
 
     try {
       final response = await http.get(Uri.parse(url));
@@ -107,7 +108,7 @@ class _FavoriteTutorsScreenState extends State<FavoriteTutorsScreen> {
                             final profileImageUrl = tutor['profile_images'] !=
                                         null &&
                                     tutor['profile_images'].isNotEmpty
-                                ? 'http://10.5.50.138/tutoring_app/uploads/' +
+                                ? 'http://10.5.50.82/tutoring_app/uploads/' +
                                     tutor['profile_images']
                                 : 'images/default_profile.jpg';
 
@@ -151,7 +152,7 @@ class _FavoriteTutorsScreenState extends State<FavoriteTutorsScreen> {
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) => TutorProfileScreen(
-                                      currentUserRole: widget.currentUserRole,
+                                        currentUserRole: widget.currentUserRole,
                                         userId: widget.userId,
                                         tutorId: id,
                                         userName: tutor['name'] ?? 'Unknown',
