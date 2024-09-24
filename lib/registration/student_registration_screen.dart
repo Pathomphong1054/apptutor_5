@@ -242,7 +242,7 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
   Future<void> _getAddressFromCoordinates(
       double latitude, double longitude) async {
     final apiKey =
-        'AIzaSyAijDTG6loIcfDwQyU94VTK0ru1-55OylI'; // ใส่ API Key ของคุณ
+        'AIzaSyAifMkvdmH00OHXVAw1RNV4nsL56vQWAzQ'; // ใส่ API Key ของคุณ
     final url = Uri.parse(
         'https://maps.googleapis.com/maps/api/geocode/json?latlng=$latitude,$longitude&key=$apiKey');
 
@@ -262,6 +262,13 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
     } catch (e) {
       print('Error fetching address: $e');
     }
+  }
+
+  bool isValidEmail(String email) {
+    final RegExp emailRegExp = RegExp(
+      r'^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$',
+    );
+    return emailRegExp.hasMatch(email);
   }
 
   Future<void> registerStudent(BuildContext context) async {
@@ -290,7 +297,7 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
 
     var request = http.MultipartRequest(
       'POST',
-      Uri.parse('http://10.5.50.82/tutoring_app/register_student.php'),
+      Uri.parse('http://192.168.243.173/tutoring_app/register_student.php'),
     );
 
     request.fields['name'] = name;
@@ -345,7 +352,7 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
               userName: userName,
               userRole: 'student',
               profileImageUrl:
-                  'http://10.5.50.82/tutoring_app/uploads/$profileImageUrl',
+                  'http://192.168.243.173/tutoring_app/uploads/$profileImageUrl',
               currentUserRole: 'student',
               idUser: '',
               tutorName: '',

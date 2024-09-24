@@ -58,7 +58,7 @@ class _TutorSentRequestsScreenState extends State<TutorSentRequestsScreen> {
     });
 
     var url = Uri.parse(
-        'http://10.5.50.82/tutoring_app/fetch_sent_requests.php?sender=${widget.tutorName}');
+        'http://192.168.243.173/tutoring_app/fetch_sent_requests.php?sender=${widget.tutorName}');
     print('Fetching data from: $url');
 
     try {
@@ -97,7 +97,8 @@ class _TutorSentRequestsScreenState extends State<TutorSentRequestsScreen> {
   Future<void> _deleteRequest(int index, String requestId) async {
     try {
       final response = await http.post(
-        Uri.parse('http://10.5.50.82/tutoring_app/tutor_delete_request.php'),
+        Uri.parse(
+            'http://192.168.243.173/tutoring_app/tutor_delete_request.php'),
         body: {'request_id': requestId},
       );
 
@@ -217,7 +218,7 @@ class _TutorSentRequestsScreenState extends State<TutorSentRequestsScreen> {
                                                       null &&
                                                   profileImage.isNotEmpty
                                               ? NetworkImage(
-                                                  'http://10.5.50.82/tutoring_app/uploads/$profileImage')
+                                                  'http://192.168.243.173/tutoring_app/uploads/$profileImage')
                                               : AssetImage(
                                                       'assets/default_profile.png')
                                                   as ImageProvider,

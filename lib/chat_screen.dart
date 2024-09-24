@@ -65,19 +65,22 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _fetchMessages() async {
     try {
       final response = await http.get(Uri.parse(
-          'http://10.5.50.82/tutoring_app/fetch_chat.php?sender=${widget.currentUser}&recipient=${widget.recipient}&session_id=${widget.sessionId}'));
+          'http://192.168.243.173/tutoring_app/fetch_chat.php?sender=${widget.currentUser}&recipient=${widget.recipient}&session_id=${widget.sessionId}'));
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         if (responseData['status'] == 'success') {
-          setState(() {
-            _messages =
-                List<Map<String, dynamic>>.from(responseData['messages']);
-            _responseStatus =
-                responseData['response_status']; // Fetch response_status
-            _isLoading = false;
-          });
-          _scrollToBottom(); // Scroll to the latest message
+          if (mounted) {
+            // ตรวจสอบก่อนใช้ setState
+            setState(() {
+              _messages =
+                  List<Map<String, dynamic>>.from(responseData['messages']);
+              _responseStatus =
+                  responseData['response_status']; // Fetch response_status
+              _isLoading = false;
+            });
+            _scrollToBottom(); // Scroll to the latest message
+          }
         } else {
           throw Exception(
               'Failed to load messages: ${responseData['message']}');
@@ -86,17 +89,20 @@ class _ChatScreenState extends State<ChatScreen> {
         throw Exception('Failed to load messages: ${response.reasonPhrase}');
       }
     } catch (e) {
-      setState(() {
-        _errorMessage = 'Failed to load messages: $e';
-        _isLoading = false;
-      });
+      if (mounted) {
+        // ตรวจสอบก่อนใช้ setState
+        setState(() {
+          _errorMessage = 'Failed to load messages: $e';
+          _isLoading = false;
+        });
+      }
     }
   }
 
   Future<void> createNotification(
       String sender, String recipient, String message, String type) async {
     final response = await http.post(
-      Uri.parse('http://10.5.50.82/tutoring_app/create_notification.php'),
+      Uri.parse('http://192.168.243.173/tutoring_app/create_notification.php'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({
         'sender': sender,
@@ -122,7 +128,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (message.isNotEmpty) {
       try {
         final response = await http.post(
-          Uri.parse('http://10.5.50.82/tutoring_app/send_message.php'),
+          Uri.parse('http://192.168.243.173/tutoring_app/send_message.php'),
           headers: {'Content-Type': 'application/json'},
           body: json.encode({
             'sender': widget.currentUser,
@@ -135,17 +141,20 @@ class _ChatScreenState extends State<ChatScreen> {
         if (response.statusCode == 200) {
           final responseData = json.decode(response.body);
           if (responseData['status'] == 'success') {
-            setState(() {
-              _messages.add({
-                'sender': widget.currentUser,
-                'recipient': widget.recipient,
-                'message': message,
-                'session_id': widget.sessionId,
+            if (mounted) {
+              // ตรวจสอบก่อนใช้ setState
+              setState(() {
+                _messages.add({
+                  'sender': widget.currentUser,
+                  'recipient': widget.recipient,
+                  'message': message,
+                  'session_id': widget.sessionId,
+                });
+                _allMessages[widget.sessionId] = _messages;
+                _controller.clear();
               });
-              _allMessages[widget.sessionId] = _messages;
-              _controller.clear();
-            });
-            _scrollToBottom();
+              _scrollToBottom();
+            }
 
             await createNotification(
                 widget.currentUser, widget.recipient, message, 'chat');
@@ -172,7 +181,7 @@ class _ChatScreenState extends State<ChatScreen> {
         'Location: Lat: ${position.latitude}, Lng: ${position.longitude}';
     try {
       final response = await http.post(
-        Uri.parse('http://10.5.50.82/tutoring_app/send_message.php'),
+        Uri.parse('http://192.168.243.173/tutoring_app/send_message.php'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'sender': widget.currentUser,
@@ -187,18 +196,21 @@ class _ChatScreenState extends State<ChatScreen> {
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         if (responseData['status'] == 'success') {
-          setState(() {
-            _messages.add({
-              'sender': widget.currentUser,
-              'recipient': widget.recipient,
-              'message': message,
-              'latitude': position.latitude.toString(),
-              'longitude': position.longitude.toString(),
-              'session_id': widget.sessionId,
+          if (mounted) {
+            // ตรวจสอบก่อนใช้ setState
+            setState(() {
+              _messages.add({
+                'sender': widget.currentUser,
+                'recipient': widget.recipient,
+                'message': message,
+                'latitude': position.latitude.toString(),
+                'longitude': position.longitude.toString(),
+                'session_id': widget.sessionId,
+              });
+              _allMessages[widget.sessionId] = _messages;
             });
-            _allMessages[widget.sessionId] = _messages;
-          });
-          _scrollToBottom();
+            _scrollToBottom();
+          }
 
           await createNotification(
               widget.currentUser, widget.recipient, message, 'location');
@@ -218,7 +230,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _sendImage(File image) async {
     var request = http.MultipartRequest(
       'POST',
-      Uri.parse('http://10.5.50.82/tutoring_app/upload_image_chat.php'),
+      Uri.parse('http://192.168.243.173/tutoring_app/upload_image_chat.php'),
     );
     request.fields['sender'] = widget.currentUser;
     request.fields['recipient'] = widget.recipient;
@@ -232,17 +244,20 @@ class _ChatScreenState extends State<ChatScreen> {
       final responseData = json.decode(res.body);
 
       if (responseData['status'] == 'success') {
-        setState(() {
-          _messages.add({
-            'sender': widget.currentUser,
-            'recipient': widget.recipient,
-            'message': '[Image]',
-            'image_url': responseData['file_path'],
-            'session_id': widget.sessionId,
+        if (mounted) {
+          // ตรวจสอบก่อนใช้ setState
+          setState(() {
+            _messages.add({
+              'sender': widget.currentUser,
+              'recipient': widget.recipient,
+              'message': '[Image]',
+              'image_url': responseData['file_path'],
+              'session_id': widget.sessionId,
+            });
+            _allMessages[widget.sessionId] = _messages;
           });
-          _allMessages[widget.sessionId] = _messages;
-        });
-        _scrollToBottom();
+          _scrollToBottom();
+        }
       } else {
         throw Exception(responseData['message']);
       }
@@ -296,7 +311,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _sendResponse(String responseStatus, int sessionId) async {
     try {
       final response = await http.post(
-        Uri.parse('http://10.5.50.82/tutoring_app/update_response.php'),
+        Uri.parse('http://192.168.243.173/tutoring_app/update_response.php'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'session_id': sessionId,
@@ -355,7 +370,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
     // เรียก API เพื่อส่งข้อความ
     final response = await http.post(
-      Uri.parse('http://10.5.50.82/tutoring_app/send_message.php'),
+      Uri.parse('http://192.168.243.173/tutoring_app/send_message.php'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({
         'sender': widget.currentUser, // ติวเตอร์ที่ส่งข้อความ
@@ -425,6 +440,7 @@ class _ChatScreenState extends State<ChatScreen> {
           } else {
             return TutorProfileScreen(
               userName: widget.recipient,
+              currentUserRole: widget.currentUserRole,
               canEdit: false,
               userRole: 'Tutor',
               currentUser: widget.currentUser,
@@ -512,7 +528,11 @@ class _ChatScreenState extends State<ChatScreen> {
                               bool isCurrentUser =
                                   message['sender'] == widget.currentUser;
                               LatLng? location;
-
+                              if (message['image_url'] != null &&
+                                  message['image_url']!.isNotEmpty) {
+                                print(message[
+                                    'image_url']); // ตรวจสอบว่า URL ของรูปภาพถูกต้องหรือไม่
+                              }
                               if (message['latitude'] != null &&
                                   message['longitude'] != null) {
                                 try {
@@ -599,7 +619,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                                     errorBuilder: (context,
                                                         error, stackTrace) {
                                                       return Text(
-                                                        'Image failed to load',
+                                                        'Failed to load image',
                                                         style: TextStyle(
                                                             color: Colors.red),
                                                       );
@@ -608,11 +628,8 @@ class _ChatScreenState extends State<ChatScreen> {
                                                 : Text(
                                                     message['message'] ?? '',
                                                     style: TextStyle(
-                                                      fontSize: 16,
-                                                      color: isCurrentUser
-                                                          ? Colors.black87
-                                                          : Colors.black54,
-                                                    ),
+                                                        fontSize: 16,
+                                                        color: Colors.black),
                                                   ),
                                           ),
                                       ],

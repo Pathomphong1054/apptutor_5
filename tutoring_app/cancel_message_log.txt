@@ -1,0 +1,16 @@
+Array
+(
+    [sender] => ปฐมพงษ์ บุญเกื้อ
+    [recipient] => Pathomphong Bunkue
+    [message] => การนัดหมายวันที่ 25/9/2024 ถูกยกเลิกแล้ว.
+
+    [session_id] => 186
+)
+Array
+(
+    [sender] => ปฐมพงษ์ บุญเกื้อ
+    [recipient] => Pathomphong Bunkue
+    [message] => การนัดหมายวันที่ 26/9/2024 ถูกยกเลิกแล้ว.
+
+    [session_id] => 187
+)

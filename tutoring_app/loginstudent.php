@@ -9,7 +9,6 @@ if (!$con) {
 $email = $_POST['email'];
 $password = $_POST['password'];
 
-
 $stmt = $con->prepare("SELECT * FROM students WHERE email = ?");
 $stmt->bind_param("s", $email);
 $stmt->execute();
@@ -23,7 +22,8 @@ if ($result->num_rows == 1) {
             'message' => 'Login successful', 
             'name' => $row['name'], 
             'role' => 'student',
-            'id' => $row['id']  // เพิ่มการส่ง id กลับไปที่ Flutter
+            'id' => $row['id'],  // ส่ง id
+            'profile_image' => $row['profile_image'] ?? null // ส่ง profile_image ถ้ามี
         ]);
     } else {
         echo json_encode(['status' => 'error', 'message' => 'Incorrect password']);

@@ -11,12 +11,17 @@ if (empty($sender) || empty($recipient)) {
     exit();
 }
 
+// ใช้ prepared statement เพื่อป้องกัน SQL Injection
 $query = "SELECT * FROM messages 
-          WHERE (sender='$sender' AND recipient='$recipient') 
-          OR (sender='$recipient' AND recipient='$sender') 
+          WHERE (sender = ? AND recipient = ?) 
+          OR (sender = ? AND recipient = ?) 
           ORDER BY timestamp ASC";
 
-$result = mysqli_query($con, $query);
+$stmt = $con->prepare($query);
+$stmt->bind_param('ssss', $sender, $recipient, $recipient, $sender);
+$stmt->execute();
+
+$result = $stmt->get_result();
 
 if (!$result) {
     echo json_encode(['status' => 'error', 'message' => mysqli_error($con)]);
@@ -24,17 +29,17 @@ if (!$result) {
 }
 
 $messages = array();
-while ($row = mysqli_fetch_assoc($result)) {
+while ($row = $result->fetch_assoc()) {
     $messages[] = [
         'id' => $row['id'],
         'sender' => $row['sender'],
         'recipient' => $row['recipient'],
         'message' => $row['message'],
         'timestamp' => $row['timestamp'],
-        'latitude' => $row['latitude'] ?? '',
-        'longitude' => $row['longitude'] ?? '',
-        'session_id' => $row['session_id'] ?? '',
-        'image_url' => $row['file_path'] ?? ''  // Added file_path to response
+        'latitude' => !empty($row['latitude']) ? $row['latitude'] : null,  // ส่งค่า null ถ้าไม่มีค่า
+        'longitude' => !empty($row['longitude']) ? $row['longitude'] : null, // ส่งค่า null ถ้าไม่มีค่า
+        'session_id' => !empty($row['session_id']) ? $row['session_id'] : null, // ส่งค่า null ถ้าไม่มีค่า
+        'image_url' => !empty($row['file_path']) ? $row['file_path'] : null  // ส่งค่า null ถ้าไม่มีค่า
     ];
 }
 

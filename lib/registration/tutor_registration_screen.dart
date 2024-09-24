@@ -180,7 +180,7 @@ class _TutorRegistrationScreenState extends State<TutorRegistrationScreen> {
   Future<void> _getAddressFromCoordinates(
       double latitude, double longitude) async {
     final apiKey =
-        'AIzaSyAijDTG6loIcfDwQyU94VTK0ru1-55OylI'; // ใส่ API Key ของคุณ
+        'AIzaSyAifMkvdmH00OHXVAw1RNV4nsL56vQWAzQ'; // ใส่ API Key ของคุณ
     final url = Uri.parse(
         'https://maps.googleapis.com/maps/api/geocode/json?latlng=$latitude,$longitude&key=$apiKey');
 
@@ -230,6 +230,13 @@ class _TutorRegistrationScreenState extends State<TutorRegistrationScreen> {
     }
   }
 
+  bool isValidEmail(String email) {
+    final RegExp emailRegExp = RegExp(
+      r'^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$',
+    );
+    return emailRegExp.hasMatch(email);
+  }
+
   Future<void> registerTutor(BuildContext context) async {
     final String name = _nameController.text;
     final String email = _emailController.text;
@@ -260,7 +267,7 @@ class _TutorRegistrationScreenState extends State<TutorRegistrationScreen> {
 
     var request = http.MultipartRequest(
       'POST',
-      Uri.parse('http://10.5.50.82/tutoring_app/register_tutor.php'),
+      Uri.parse('http://192.168.243.173/tutoring_app/register_tutor.php'),
     );
     request.fields['name'] = name;
     request.fields['email'] = email;
@@ -309,7 +316,7 @@ class _TutorRegistrationScreenState extends State<TutorRegistrationScreen> {
                 userName: userName,
                 userRole: 'Tutor',
                 profileImageUrl: responseData['profile_image'] != null
-                    ? 'http://10.5.50.82/tutoring_app/uploads/' +
+                    ? 'http://192.168.243.173/tutoring_app/uploads/' +
                         responseData['profile_image']
                     : 'images/default_profile.jpg',
                 currentUserRole: 'Tutor',

@@ -11,6 +11,7 @@ class SubjectDetailScreen extends StatefulWidget {
   final String userRole;
   final String profileImageUrl;
   final String idUser;
+  final String currentUserRole;
 
   const SubjectDetailScreen({
     Key? key,
@@ -21,6 +22,7 @@ class SubjectDetailScreen extends StatefulWidget {
     required this.idUser,
     required userId,
     required String tutorId,
+    required this.currentUserRole,
   }) : super(key: key);
 
   @override
@@ -47,7 +49,7 @@ class _SubjectDetailScreenState extends State<SubjectDetailScreen> {
     });
 
     var url = Uri.parse(
-        'http://10.5.50.82/tutoring_app/fetch_tutors_by_subject.php?subject=${widget.subject['name']}');
+        'http://192.168.243.173/tutoring_app/fetch_tutors_by_subject.php?subject=${widget.subject['name']}');
     try {
       var response = await http.get(url);
 
@@ -90,7 +92,8 @@ class _SubjectDetailScreenState extends State<SubjectDetailScreen> {
 
       print('Posting message: $messageObject');
 
-      var url = Uri.parse('http://10.5.50.82/tutoring_app/post_message.php');
+      var url =
+          Uri.parse('http://192.168.243.173/tutoring_app/post_message.php');
       var response =
           await http.post(url, body: json.encode(messageObject), headers: {
         'Content-Type': 'application/json',
@@ -141,7 +144,7 @@ class _SubjectDetailScreenState extends State<SubjectDetailScreen> {
           currentUser: widget.userName,
           recipient: recipient,
           recipientImage: recipientImage,
-           currentUserImage: widget.profileImageUrl,
+          currentUserImage: widget.profileImageUrl,
           sessionId: sessionId,
           currentUserRole: widget.userRole,
           idUser: widget.idUser,
@@ -158,7 +161,7 @@ class _SubjectDetailScreenState extends State<SubjectDetailScreen> {
       context,
       MaterialPageRoute(
         builder: (context) {
-          if (widget.userRole == 'tutor') {
+          if (widget.userRole == 'Tutor') {
             return StudentProfileScreen(
               userName: userName,
               onProfileUpdated: () {},
@@ -168,10 +171,10 @@ class _SubjectDetailScreenState extends State<SubjectDetailScreen> {
           } else {
             return TutorProfileScreen(
               userName: userName,
-              userRole: 'tutor',
+              userRole: 'Tutor',
               canEdit: false,
               currentUser: widget.userName,
-               currentUserImage: widget.profileImageUrl,
+              currentUserImage: widget.profileImageUrl,
               onProfileUpdated: () {},
               username: '',
               profileImageUrl: '',
@@ -179,6 +182,7 @@ class _SubjectDetailScreenState extends State<SubjectDetailScreen> {
               tutorId: tutorId,
               idUser: widget.idUser,
               recipientImage: '',
+              currentUserRole: widget.currentUserRole,
             );
           }
         },
@@ -201,95 +205,103 @@ class _SubjectDetailScreenState extends State<SubjectDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Title and description of the subject
                   Text(
                     widget.subject['description'],
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   SizedBox(height: 20),
-                  Container(
-                    padding: const EdgeInsets.all(16.0),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10.0),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.3),
-                          spreadRadius: 2,
-                          blurRadius: 5,
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Post a new message:',
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                        SizedBox(height: 10),
-                        TextField(
-                          controller: _postController,
-                          decoration: InputDecoration(
-                            hintText: 'Enter your message',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8.0),
-                            ),
-                            filled: true,
-                            fillColor: Colors.grey[200],
+
+                  // แสดงเฉพาะเมื่อ userRole ไม่ใช่ tutor
+                  if (widget.userRole != 'Tutor')
+                    // Box for posting a new message
+                    Container(
+                      padding: const EdgeInsets.all(16.0),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10.0),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.3),
+                            spreadRadius: 2,
+                            blurRadius: 5,
                           ),
-                          maxLines: 3,
-                        ),
-                        SizedBox(height: 10),
-                        TextField(
-                          controller: _locationController,
-                          decoration: InputDecoration(
-                            hintText: 'Enter location',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8.0),
-                            ),
-                            filled: true,
-                            fillColor: Colors.grey[200],
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Post a new message:',
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold),
                           ),
-                        ),
-                        SizedBox(height: 10),
-                        TextField(
-                          controller: _dateTimeController,
-                          decoration: InputDecoration(
-                            hintText: 'Enter date and time',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8.0),
-                            ),
-                            filled: true,
-                            fillColor: Colors.grey[200],
-                          ),
-                        ),
-                        SizedBox(height: 20),
-                        Center(
-                          child: ElevatedButton.icon(
-                            onPressed: _postMessage,
-                            icon: Icon(Icons.send),
-                            label: Text('Post Message'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor:
-                                  const Color.fromARGB(255, 28, 195, 198),
-                              foregroundColor: Colors.white,
-                              padding: EdgeInsets.symmetric(
-                                  vertical: 12.0, horizontal: 24.0),
-                              shape: RoundedRectangleBorder(
+                          SizedBox(height: 10),
+                          TextField(
+                            controller: _postController,
+                            decoration: InputDecoration(
+                              hintText: 'Enter your message',
+                              border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8.0),
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey[200],
+                            ),
+                            maxLines: 3,
+                          ),
+                          SizedBox(height: 10),
+                          TextField(
+                            controller: _locationController,
+                            decoration: InputDecoration(
+                              hintText: 'Enter location',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey[200],
+                            ),
+                          ),
+                          SizedBox(height: 10),
+                          TextField(
+                            controller: _dateTimeController,
+                            decoration: InputDecoration(
+                              hintText: 'Enter date and time',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey[200],
+                            ),
+                          ),
+                          SizedBox(height: 20),
+                          Center(
+                            child: ElevatedButton.icon(
+                              onPressed: _postMessage,
+                              icon: Icon(Icons.send),
+                              label: Text('Post Message'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    const Color.fromARGB(255, 28, 195, 198),
+                                foregroundColor: Colors.white,
+                                padding: EdgeInsets.symmetric(
+                                    vertical: 12.0, horizontal: 24.0),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8.0),
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
                   SizedBox(height: 20),
+
+                  // Tutors list section
                   Text(
                     'Tutors for ${widget.subject['name']}:',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
+                  SizedBox(height: 10),
                   ListView.builder(
                     shrinkWrap: true,
                     physics: NeverScrollableScrollPhysics(),
@@ -301,7 +313,7 @@ class _SubjectDetailScreenState extends State<SubjectDetailScreen> {
                       final subject = tutor['subject'] ?? 'No Subject';
                       final profileImageUrl = tutor['profile_images'] != null &&
                               tutor['profile_images'].isNotEmpty
-                          ? 'http://10.5.50.82/tutoring_app/uploads/' +
+                          ? 'http://192.168.243.173/tutoring_app/uploads/' +
                               tutor['profile_images']
                           : 'images/default_profile.jpg';
                       final username = tutor['name'] ?? 'No Username';
@@ -324,6 +336,7 @@ class _SubjectDetailScreenState extends State<SubjectDetailScreen> {
                                 tutorId: tutor['id'].toString(),
                                 idUser: widget.idUser,
                                 recipientImage: '',
+                                currentUserRole: widget.currentUserRole,
                               ),
                             ),
                           );

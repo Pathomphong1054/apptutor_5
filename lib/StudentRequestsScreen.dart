@@ -8,13 +8,15 @@ class StudentRequestsScreen extends StatefulWidget {
   final String userName;
   final String idUser;
   final String profileImageUrl;
+  final String currentUserRole;
 
   StudentRequestsScreen(
       {required this.userName,
       required String userRole,
       required this.idUser,
       required this.profileImageUrl,
-      required String recipientImage});
+      required String recipientImage,
+      required this.currentUserRole});
 
   @override
   _StudentRequestsScreenState createState() => _StudentRequestsScreenState();
@@ -37,7 +39,7 @@ class _StudentRequestsScreenState extends State<StudentRequestsScreen> {
     });
 
     var url = Uri.parse(
-        'http://10.5.50.82/tutoring_app/fetch_requests.php?recipient=${widget.userName}');
+        'http://192.168.243.173/tutoring_app/fetch_requests.php?recipient=${widget.userName}');
     try {
       var response = await http.get(url);
 
@@ -68,7 +70,7 @@ class _StudentRequestsScreenState extends State<StudentRequestsScreen> {
   Future<void> _respondToRequest(int requestId, bool isAccepted,
       String tutorName, String tutorProfileImage) async {
     var response = await http.post(
-      Uri.parse('http://10.5.50.82/tutoring_app/respond_request.php'),
+      Uri.parse('http://192.168.243.173/tutoring_app/respond_request.php'),
       body: json.encode({
         'request_id': requestId,
         'is_accepted': isAccepted ? 1 : 0,
@@ -110,7 +112,7 @@ class _StudentRequestsScreenState extends State<StudentRequestsScreen> {
 
   Future<void> _deleteRequestFromDatabase(int requestId) async {
     var response = await http.post(
-      Uri.parse('http://10.5.50.82/tutoring_app/delete_request.php'),
+      Uri.parse('http://192.168.243.173/tutoring_app/delete_request.php'),
       body: json.encode({
         'request_id': requestId,
       }),
@@ -124,7 +126,8 @@ class _StudentRequestsScreenState extends State<StudentRequestsScreen> {
 
   Future<void> _deletePostByUserName(String userName) async {
     var response = await http.post(
-      Uri.parse('http://10.5.50.82/tutoring_app/delete_post_by_username.php'),
+      Uri.parse(
+          'http://192.168.243.173/tutoring_app/delete_post_by_username.php'),
       body: json.encode({
         'user_name': userName,
       }),
@@ -174,6 +177,7 @@ class _StudentRequestsScreenState extends State<StudentRequestsScreen> {
           userId: widget.idUser,
           tutorId: tutorId,
           idUser: widget.idUser, recipientImage: '',
+          currentUserRole: widget.currentUserRole,
         ),
       ),
     );
@@ -235,7 +239,7 @@ class _StudentRequestsScreenState extends State<StudentRequestsScreen> {
                             backgroundImage: tutorProfileImage != null &&
                                     tutorProfileImage.isNotEmpty
                                 ? NetworkImage(
-                                    'http://10.5.50.82/tutoring_app/uploads/$tutorProfileImage')
+                                    'http://192.168.243.173/tutoring_app/uploads/$tutorProfileImage')
                                 : AssetImage('images/default_profile.jpg')
                                     as ImageProvider,
                           ),

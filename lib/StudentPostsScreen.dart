@@ -1,7 +1,7 @@
 import 'dart:convert';
-import 'package:apptutor_2/EditPostScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'EditPostScreen.dart';
 
 class StudentPostsScreen extends StatefulWidget {
   final String userName;
@@ -18,7 +18,7 @@ class StudentPostsScreen extends StatefulWidget {
 class _StudentPostsScreenState extends State<StudentPostsScreen> {
   Future<List<dynamic>> _fetchPosts() async {
     final response = await http.get(Uri.parse(
-        'http://10.5.50.82/tutoring_app/get_student_posts.php?username=${widget.userName}'));
+        'http://192.168.243.173/tutoring_app/get_student_posts.php?username=${widget.userName}'));
 
     if (response.statusCode == 200) {
       final responseData = json.decode(response.body);
@@ -34,8 +34,8 @@ class _StudentPostsScreenState extends State<StudentPostsScreen> {
 
   Future<void> _deletePost(String postId) async {
     final response = await http.post(
-      Uri.parse('http://10.5.50.82/tutoring_app/delete_post_student.php'),
-      body: {'postId': postId}, // ใช้ postId (จาก 'id') แทน
+      Uri.parse('http://192.168.243.173/tutoring_app/delete_post_student.php'),
+      body: {'postId': postId},
     );
     if (response.statusCode == 200) {
       final responseData = json.decode(response.body);
@@ -63,8 +63,10 @@ class _StudentPostsScreenState extends State<StudentPostsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Your Posts',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24)),
+        title: Text(
+          'Your Posts',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
+        ),
         backgroundColor: const Color.fromARGB(255, 28, 195, 198),
         centerTitle: true,
       ),
@@ -103,13 +105,14 @@ class _StudentPostsScreenState extends State<StudentPostsScreen> {
       String location, String subject, String dateTime) {
     return Card(
       margin: EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-      elevation: 6,
+      elevation: 8,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // แถวที่มีชื่อผู้ใช้และปุ่มแก้ไข/ลบ
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -125,26 +128,19 @@ class _StudentPostsScreenState extends State<StudentPostsScreen> {
                 Row(
                   children: [
                     // ปุ่มแก้ไขโพสต์
-                    InkWell(
-                      onTap: () {
+                    IconButton(
+                      icon: Icon(Icons.edit, color: Colors.blueAccent),
+                      onPressed: () {
                         _navigateToEditPost(
                             postId, message, location, subject, dateTime);
                       },
-                      child: Icon(
-                        Icons.edit,
-                        color: Colors.blueAccent,
-                      ),
                     ),
-                    SizedBox(width: 10),
                     // ปุ่มลบโพสต์
-                    InkWell(
-                      onTap: () {
+                    IconButton(
+                      icon: Icon(Icons.delete, color: Colors.redAccent),
+                      onPressed: () {
                         _confirmDeletePost(postId);
                       },
-                      child: Icon(
-                        Icons.delete,
-                        color: Colors.redAccent,
-                      ),
                     ),
                   ],
                 ),
@@ -153,7 +149,7 @@ class _StudentPostsScreenState extends State<StudentPostsScreen> {
             SizedBox(height: 10),
             Divider(color: Colors.grey[300]),
             SizedBox(height: 10),
-            // ข้อความ
+            // ข้อความโพสต์
             Text(
               message,
               style: TextStyle(
@@ -163,7 +159,7 @@ class _StudentPostsScreenState extends State<StudentPostsScreen> {
               ),
             ),
             SizedBox(height: 20),
-            // Location และ Subject
+            // แสดงตำแหน่งและวิชา
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [

@@ -5,31 +5,49 @@ header('Content-Type: application/json');
 
 $sender = $_GET['sender'] ?? '';
 
+// ตรวจสอบว่า sender ถูกส่งมาหรือไม่
 if (empty($sender)) {
     echo json_encode(['status' => 'error', 'message' => 'Sender parameter is missing']);
     exit();
 }
 
-$query = "SELECT * FROM requests WHERE sender = '$sender' ORDER BY created_at ASC";
+// แก้ไขชื่อคอลัมน์เป็น 'profile_images'
+$query = "SELECT r.*, s.profile_images FROM requests r LEFT JOIN students s ON r.recipient = s.name WHERE r.sender = ?";
+$stmt = $con->prepare($query);
 
-$result = mysqli_query($con, $query);
-
-if (!$result) {
-    echo json_encode(['status' => 'error', 'message' => mysqli_error($con)]);
+if (!$stmt) {
+    echo json_encode(['status' => 'error', 'message' => 'Prepare statement failed: ' . $con->error]);
     exit();
 }
 
+$stmt->bind_param('s', $sender);
+$stmt->execute();
+$result = $stmt->get_result();
+
+// ตรวจสอบผลลัพธ์การ query
+error_log("Sender received: " . $sender);
+error_log("Number of rows found: " . $result->num_rows);
+
 $requests = array();
-while ($row = mysqli_fetch_assoc($result)) {
+while ($row = $result->fetch_assoc()) {
     $requests[] = [
         'id' => $row['id'],
         'sender' => $row['sender'],
         'recipient' => $row['recipient'],
         'message' => $row['message'],
         'is_accepted' => $row['is_accepted'],
-        // 'profileImage' => $row['profileImage'], // ลบหรือแก้ไขให้สอดคล้องกับฟิลด์ที่มีจริงๆ
+        'created_at' => $row['created_at'],
+        // ใช้ 'profile_images' จากตาราง students
+        'profile_image' => isset($row['profile_images']) ? $row['profile_images'] : null,
     ];
 }
 
-echo json_encode(['status' => 'success', 'requests' => $requests]);
+if (empty($requests)) {
+    echo json_encode(['status' => 'error', 'message' => 'No requests found']);
+} else {
+    echo json_encode(['status' => 'success', 'requests' => $requests]);
+}
+
+$stmt->close();
+$con->close();
 ?>

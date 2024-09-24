@@ -11,14 +11,25 @@ $date = $input['date'] ?? '';
 $startTime = $input['startTime'] ?? '';
 $endTime = $input['endTime'] ?? '';
 $rate = $input['rate'] ?? '';
+$amount = $input['amount'] ?? '';
 
+// ตรวจสอบค่าที่ต้องกรอกให้ครบ
 if (empty($student) || empty($tutor) || empty($date) || empty($startTime) || empty($endTime) || empty($rate)) {
     echo json_encode(['status' => 'error', 'message' => 'Invalid input']);
     exit();
 }
 
-$query = "INSERT INTO tutoring_sessions (student, tutor, date, start_time, end_time, rate, status) 
-          VALUES ('$student', '$tutor', '$date', '$startTime', '$endTime', '$rate', 'pending')";
+// ตรวจสอบว่า amount เป็นตัวเลขหรือไม่
+if (!is_numeric($amount)) {
+    echo json_encode(['status' => 'error', 'message' => 'Invalid amount']);
+    exit();
+}
+
+// ปัดจำนวนเงินเป็นจำนวนเต็ม
+$amount = round($amount, 0);
+
+$query = "INSERT INTO tutoring_sessions (student, tutor, date, start_time, end_time, rate, amount, response_status) 
+          VALUES ('$student', '$tutor', '$date', '$startTime', '$endTime', '$rate', '$amount', 'pending')";
 
 if (mysqli_query($con, $query)) {
     $session_id = mysqli_insert_id($con); // Get the ID of the inserted row
