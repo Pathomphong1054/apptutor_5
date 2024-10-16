@@ -71,7 +71,6 @@ class _ChatScreenState extends State<ChatScreen> {
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         if (responseData['status'] == 'success') {
-<<<<<<< HEAD
           if (mounted) {
             // ตรวจสอบก่อนใช้ setState
             setState(() {
@@ -83,16 +82,6 @@ class _ChatScreenState extends State<ChatScreen> {
             });
             _scrollToBottom(); // Scroll to the latest message
           }
-=======
-          setState(() {
-            _messages =
-                List<Map<String, dynamic>>.from(responseData['messages']);
-            _responseStatus = responseData[
-                'response_status']; // Fetch response_status if available
-            _isLoading = false;
-          });
-          _scrollToBottom(); // Scroll to the latest message
->>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
         } else {
           throw Exception(
               'Failed to load messages: ${responseData['message']}');
@@ -159,7 +148,6 @@ class _ChatScreenState extends State<ChatScreen> {
         if (response.statusCode == 200) {
           final responseData = json.decode(response.body);
           if (responseData['status'] == 'success') {
-<<<<<<< HEAD
             if (mounted) {
               // ตรวจสอบก่อนใช้ setState
               setState(() {
@@ -171,14 +159,6 @@ class _ChatScreenState extends State<ChatScreen> {
                 });
                 _allMessages[widget.sessionId] = _messages;
                 _controller.clear();
-=======
-            setState(() {
-              _messages.add({
-                'sender_id': senderId,
-                'recipient_id': recipientId,
-                'message': message,
-                'session_id': widget.sessionId,
->>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
               });
               _scrollToBottom();
             }
@@ -224,7 +204,6 @@ class _ChatScreenState extends State<ChatScreen> {
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         if (responseData['status'] == 'success') {
-<<<<<<< HEAD
           if (mounted) {
             // ตรวจสอบก่อนใช้ setState
             setState(() {
@@ -237,16 +216,6 @@ class _ChatScreenState extends State<ChatScreen> {
                 'session_id': widget.sessionId,
               });
               _allMessages[widget.sessionId] = _messages;
-=======
-          setState(() {
-            _messages.add({
-              'sender_id': widget.currentUser,
-              'recipient_id': widget.recipient,
-              'message': message,
-              'latitude': position.latitude.toString(),
-              'longitude': position.longitude.toString(),
-              'session_id': widget.sessionId,
->>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
             });
             _scrollToBottom();
           }

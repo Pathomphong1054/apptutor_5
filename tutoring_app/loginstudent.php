@@ -9,10 +9,6 @@ if (!$con) {
 $email = $_POST['email'];
 $password = $_POST['password'];
 
-<<<<<<< HEAD
-=======
-// ตรวจสอบข้อมูล email และ password
->>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
 $stmt = $con->prepare("SELECT * FROM students WHERE email = ?");
 $stmt->bind_param("s", $email);
 $stmt->execute();
@@ -31,13 +27,8 @@ if ($result->num_rows == 1) {
             'message' => 'Login successful', 
             'name' => $row['name'], 
             'role' => 'student',
-<<<<<<< HEAD
             'id' => $row['id'],  // ส่ง id
             'profile_image' => $row['profile_image'] ?? null // ส่ง profile_image ถ้ามี
-=======
-            'id' => $row['id'],  // ส่ง id ของผู้ใช้
-            'profile_image' => $profileImage // ส่ง profile_image หรือ null
->>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
         ]);
     } else {
         echo json_encode(['status' => 'error', 'message' => 'Incorrect password']);

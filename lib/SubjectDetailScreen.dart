@@ -23,7 +23,6 @@ class SubjectDetailScreen extends StatefulWidget {
     required this.currentUserRole,
     required String userId,
     required String tutorId,
-    required this.currentUserRole,
   }) : super(key: key);
 
   @override
@@ -206,20 +205,6 @@ class _SubjectDetailScreenState extends State<SubjectDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Title and description of the subject
-<<<<<<< HEAD
-                  Container(
-                    padding: EdgeInsets.symmetric(vertical: 10),
-                    decoration: BoxDecoration(
-                      color: Color(0xFFe0f7fa),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      widget.subject['description'],
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF006064),
-=======
                   Text(
                     widget.subject['description'],
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -306,18 +291,9 @@ class _SubjectDetailScreenState extends State<SubjectDetailScreen> {
                             ),
                           ),
                         ],
->>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
                       ),
                     ),
                   SizedBox(height: 20),
-<<<<<<< HEAD
-
-                  if (widget.userRole != 'Tutor') _buildPostMessageSection(),
-
-                  SizedBox(height: 20),
-
-                  _buildTutorsSection(),
-=======
 
                   // Tutors list section
                   Text(
@@ -402,7 +378,6 @@ class _SubjectDetailScreenState extends State<SubjectDetailScreen> {
                       );
                     },
                   ),
->>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
                 ],
               ),
             ),

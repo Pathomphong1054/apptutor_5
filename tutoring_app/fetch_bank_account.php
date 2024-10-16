@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 <?php
-=======
-<!-- <?php
->>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
 require 'db_connection.php'; // ตรวจสอบว่า db_connection.php มีการสร้างการเชื่อมต่อฐานข้อมูลที่ถูกต้อง
 
 header('Content-Type: application/json');
@@ -52,8 +48,4 @@ if (isset($_GET['tutor'])) {
 } else {
     echo json_encode(['status' => 'error', 'message' => 'Missing tutor name']);
 }
-<<<<<<< HEAD
 ?>
-=======
-?> -->
->>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
