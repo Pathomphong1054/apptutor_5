@@ -180,11 +180,7 @@ class _TutorRegistrationScreenState extends State<TutorRegistrationScreen> {
   Future<void> _getAddressFromCoordinates(
       double latitude, double longitude) async {
     final apiKey =
-<<<<<<< HEAD
         'AIzaSyAifMkvdmH00OHXVAw1RNV4nsL56vQWAzQ'; // ใส่ API Key ของคุณ
-=======
-        'AIzaSyAifMkvdmH00OHXVAw1RNV4nsL56vQWAzQ'; // ใส่ API Key ของคุณ AIzaSyCCCIe9sGEz1HsKvf2Hly7It5_uIDYbgPI
->>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
     final url = Uri.parse(
         'https://maps.googleapis.com/maps/api/geocode/json?latlng=$latitude,$longitude&key=$apiKey');
 
@@ -234,10 +230,6 @@ class _TutorRegistrationScreenState extends State<TutorRegistrationScreen> {
     }
   }
 
-<<<<<<< HEAD
-=======
-// ฟังก์ชันสำหรับตรวจสอบรูปแบบอีเมล
->>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
   bool isValidEmail(String email) {
     final RegExp emailRegExp = RegExp(
       r'^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$',

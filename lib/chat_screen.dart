@@ -66,11 +66,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _fetchMessages() async {
     try {
       final response = await http.get(Uri.parse(
-<<<<<<< HEAD
-          'http://10.5.50.138/tutoring_app/fetch_chat.php?sender=${widget.currentUser}&recipient=${widget.recipient}&session_id=${widget.sessionId}'));
-=======
           'http://10.5.50.82/tutoring_app/fetch_chat.php?sender_id=${widget.currentUser}&recipient_id=${widget.recipient}&session_id=${widget.sessionId}'));
->>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);

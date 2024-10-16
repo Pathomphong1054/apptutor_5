@@ -59,11 +59,7 @@ class _EditScheduleScreenState extends State<EditScheduleScreen> {
     try {
       final response = await http.get(
         Uri.parse(
-<<<<<<< HEAD
             'http://10.5.50.138/tutoring_app/get_tutor_schedule.php?tutor=${widget.tutorName}'),
-=======
-            'http://10.5.50.82/tutoring_app/get_tutor_schedule.php?tutor=${widget.tutorName}'),
->>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
       );
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
@@ -94,11 +90,7 @@ class _EditScheduleScreenState extends State<EditScheduleScreen> {
     try {
       final response = await http.get(
         Uri.parse(
-<<<<<<< HEAD
             'http://10.5.50.138/tutoring_app/get_student_sessions.php?tutor=${widget.tutorName}'),
-=======
-            'http://10.5.50.82/tutoring_app/get_student_sessions.php?tutor=${widget.tutorName}'),
->>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
       );
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
@@ -189,11 +181,7 @@ class _EditScheduleScreenState extends State<EditScheduleScreen> {
       try {
         for (DateTime day in _selectedDays) {
           final response = await http.post(
-<<<<<<< HEAD
-            Uri.parse('http://10.5.50.138/tutoring_app/save_schedule.php'),
-=======
             Uri.parse('http://10.5.50.82/tutoring_app/save_schedule.php'),
->>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
             headers: {'Content-Type': 'application/json'},
             body: json.encode({
               'tutor': widget.tutorName,

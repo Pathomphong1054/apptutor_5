@@ -22,11 +22,7 @@ class _StudentPostsScreenState extends State<StudentPostsScreen> {
 
   Future<List<dynamic>> _fetchPosts() async {
     final response = await http.get(Uri.parse(
-<<<<<<< HEAD
-        'http://10.5.50.138/tutoring_app/get_student_posts.php?username=${widget.userName}'));
-=======
         'http://10.5.50.82/tutoring_app/get_student_posts.php?student_id=${widget.idUser}'));
->>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
 
     if (response.statusCode == 200) {
       try {
@@ -50,11 +46,7 @@ class _StudentPostsScreenState extends State<StudentPostsScreen> {
     });
 
     final response = await http.post(
-<<<<<<< HEAD
-      Uri.parse('http://10.5.50.138/tutoring_app/delete_post_student.php'),
-=======
       Uri.parse('http://10.5.50.82/tutoring_app/delete_post_student.php'),
->>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
       body: {'postId': postId},
     );
 

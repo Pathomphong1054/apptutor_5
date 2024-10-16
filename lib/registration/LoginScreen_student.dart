@@ -29,15 +29,6 @@ class _LoginScreenStudentState extends State<LoginScreenStudent> {
       _isLoading = true;
     });
 
-<<<<<<< HEAD
-    final response = await http.post(
-      Uri.parse('http://10.5.50.138/tutoring_app/loginstudent.php'),
-      body: {
-        'email': email,
-        'password': password,
-      },
-    );
-=======
     try {
       final response = await http.post(
         Uri.parse('http://10.5.50.82/tutoring_app/loginstudent.php'),
@@ -46,7 +37,6 @@ class _LoginScreenStudentState extends State<LoginScreenStudent> {
           'password': password,
         },
       );
->>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
 
       setState(() {
         _isLoading = false;

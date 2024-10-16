@@ -227,13 +227,8 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
 
   Future<void> _getAddressFromCoordinates(
       double latitude, double longitude) async {
-<<<<<<< HEAD
-    final apiKey =
-        'AIzaSyAifMkvdmH00OHXVAw1RNV4nsL56vQWAzQ'; // ใส่ API Key ของคุณ
-=======
     final apiKey = 'AIzaSyAifMkvdmH00OHXVAw1RNV4nsL56vQWAzQ';
     //'AIzaSyCCCIe9sGEz1HsKvf2Hly7It5_uIDYbgPI'; // ใส่ API Key ของคุณ
->>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
     final url = Uri.parse(
         'https://maps.googleapis.com/maps/api/geocode/json?latlng=$latitude,$longitude&key=$apiKey');
 

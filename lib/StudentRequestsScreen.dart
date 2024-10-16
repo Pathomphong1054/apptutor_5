@@ -39,12 +39,8 @@ class _StudentRequestsScreenState extends State<StudentRequestsScreen> {
     });
 
     var url = Uri.parse(
-<<<<<<< HEAD
-        'http://10.5.50.138/tutoring_app/fetch_requests.php?recipient=${widget.userName}');
-=======
         'http://10.5.50.82/tutoring_app/fetch_requests.php?recipient_id=${widget.idUser}'); // ส่งค่า idUser แทน userName
 
->>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
     try {
       var response = await http.get(url);
 
@@ -116,15 +112,6 @@ class _StudentRequestsScreenState extends State<StudentRequestsScreen> {
   }
 
   Future<void> _deleteRequestFromDatabase(int requestId) async {
-<<<<<<< HEAD
-    var response = await http.post(
-      Uri.parse('http://10.5.50.138/tutoring_app/delete_request.php'),
-      body: json.encode({
-        'request_id': requestId,
-      }),
-      headers: {'Content-Type': 'application/json'},
-    );
-=======
     try {
       var response = await http.post(
         Uri.parse('http://10.5.50.82/tutoring_app/delete_request.php'),
@@ -133,7 +120,6 @@ class _StudentRequestsScreenState extends State<StudentRequestsScreen> {
         }),
         headers: {'Content-Type': 'application/json'},
       );
->>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
 
       if (response.statusCode == 200) {
         var responseData = json.decode(response.body);
@@ -159,11 +145,7 @@ class _StudentRequestsScreenState extends State<StudentRequestsScreen> {
 
   Future<void> _deletePostByStudentId(String studentId) async {
     var response = await http.post(
-<<<<<<< HEAD
-      Uri.parse('http://10.5.50.138/tutoring_app/delete_post_by_username.php'),
-=======
       Uri.parse('http://10.5.50.82/tutoring_app/delete_post_by_student_id.php'),
->>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
       body: json.encode({
         'student_id': studentId, // เปลี่ยนจาก user_name เป็น student_id
       }),

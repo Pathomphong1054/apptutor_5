@@ -946,13 +946,8 @@ class _HomePage2State extends State<HomePage2>
                 itemCount:
                     _getFilteredMessages().length, // ใช้ฟังก์ชันกรองข้อความ
                 itemBuilder: (context, index) {
-<<<<<<< HEAD
-                  final message = _getFilteredMessages()[index];
-                  final userName = message['userName'] ?? '';
-=======
                   final message = messages[index];
                   final student_id = message['student_name'] ?? '';
->>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
                   final userImageUrl = message['profileImageUrl'] != null &&
                           message['profileImageUrl'].isNotEmpty
                       ? 'http://10.5.50.138/tutoring_app/uploads/' +

@@ -58,11 +58,7 @@ class _TutorSentRequestsScreenState extends State<TutorSentRequestsScreen> {
     });
 
     var url = Uri.parse(
-<<<<<<< HEAD
         'http://10.5.50.138/tutoring_app/fetch_sent_requests.php?sender=${widget.tutorName}');
-=======
-        'http://10.5.50.82/tutoring_app/fetch_sent_requests.php?sender_id=${widget.idUser}');
->>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
     print('Fetching data from: $url');
 
     try {

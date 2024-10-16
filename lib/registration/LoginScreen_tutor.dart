@@ -31,15 +31,6 @@ class _LoginScreenTutorState extends State<LoginScreenTutor> {
       _isLoading = true;
     });
 
-<<<<<<< HEAD
-    final response = await http.post(
-      Uri.parse('http://10.5.50.138/tutoring_app/login.php'),
-      body: {
-        'email': email,
-        'password': password,
-      },
-    );
-=======
     try {
       final response = await http.post(
         Uri.parse('http://10.5.50.82/tutoring_app/login.php'),
@@ -48,39 +39,11 @@ class _LoginScreenTutorState extends State<LoginScreenTutor> {
           'password': password,
         },
       );
->>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
 
       setState(() {
         _isLoading = false;
       });
 
-<<<<<<< HEAD
-    if (response.statusCode == 200) {
-      final responseData = json.decode(response.body);
-      if (responseData['status'] == 'success') {
-        String userId = responseData['id'].toString();
-        String userName = responseData['name'];
-        String userRole = responseData['role'];
-        String profileImageUrl = responseData['profile_image'] != null
-            ? 'http://10.5.50.138/tutoring_app/uploads/' +
-                responseData['profile_image']
-            : 'images/default_profile.jpg';
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => HomePage2(
-              idUser: userId,
-              userName: userName,
-              userRole: userRole,
-              profileImageUrl: profileImageUrl,
-              currentUserRole: 'Tutor',
-              tutorName: '',
-              recipientImage: '',
-              currentUserImage: '',
-              tutorId: '',
-              userImageUrl: '',
-=======
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         if (responseData['status'] == 'success') {
@@ -107,7 +70,6 @@ class _LoginScreenTutorState extends State<LoginScreenTutor> {
                 tutorId: tutorId, // ส่งค่า tutorId ไปด้วย
                 userImageUrl: '',
               ),
->>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
             ),
           );
         } else {

@@ -242,11 +242,7 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
   Future<void> _getAddressFromCoordinates(
       double latitude, double longitude) async {
     final apiKey =
-<<<<<<< HEAD
-        'AIzaSyAifMkvdmH00OHXVAw1RNV4nsL56vQWAzQ'; // ใส่ API Key ของคุณ
-=======
         'AIzaSyAifMkvdmH00OHXVAw1RNV4nsL56vQWAzQ'; // ใส่ API key ของคุณ
->>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
     final url = Uri.parse(
         'https://maps.googleapis.com/maps/api/geocode/json?latlng=$latitude,$longitude&key=$apiKey');
 
@@ -287,13 +283,9 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
     }
   }
 
-<<<<<<< HEAD
-  bool isValidEmail(String email) {
-=======
 // ฟังก์ชันสำหรับตรวจสอบรูปแบบอีเมล
   bool isValidEmail(String email) {
     // รูปแบบสำหรับตรวจสอบอีเมล
->>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
     final RegExp emailRegExp = RegExp(
       r'^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$',
     );
@@ -405,40 +397,6 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
           SnackBar(content: Text('Error parsing server response')),
         );
       }
-<<<<<<< HEAD
-
-      var data = json.decode(responseData);
-
-      if (data['status'] == 'success') {
-        String userName = name;
-        String profileImageUrl = data['profile_image'] ??
-            'default_profile.jpg'; // ใช้ค่าเริ่มต้นถ้า profile_image เป็น null
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => HomePage2(
-              userName: userName,
-              userRole: 'student',
-              profileImageUrl:
-                  'http://10.5.50.138/tutoring_app/uploads/$profileImageUrl',
-              currentUserRole: 'student',
-              idUser: '',
-              tutorName: '',
-              recipientImage: '',
-              currentUserImage: '',
-              tutorId: '',
-              userImageUrl: '',
-            ),
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['message'])),
-        );
-      }
-=======
->>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
     }
   }
 }
