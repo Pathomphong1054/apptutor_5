@@ -20,9 +20,9 @@ class SubjectDetailScreen extends StatefulWidget {
     required this.userRole,
     required this.profileImageUrl,
     required this.idUser,
-    required userId,
-    required String tutorId,
     required this.currentUserRole,
+    required String userId,
+    required String tutorId,
   }) : super(key: key);
 
   @override
@@ -40,7 +40,7 @@ class _SubjectDetailScreenState extends State<SubjectDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchTutorsBySubject(); // ดึงข้อมูลติวเตอร์จากฐานข้อมูลตามวิชา
+    _fetchTutorsBySubject();
   }
 
   Future<void> _fetchTutorsBySubject() async {
@@ -49,7 +49,7 @@ class _SubjectDetailScreenState extends State<SubjectDetailScreen> {
     });
 
     var url = Uri.parse(
-        'http://192.168.243.173/tutoring_app/fetch_tutors_by_subject.php?subject=${widget.subject['name']}');
+        'http://10.5.50.138/tutoring_app/fetch_tutors_by_subject.php?subject=${widget.subject['name']}');
     try {
       var response = await http.get(url);
 
@@ -92,8 +92,7 @@ class _SubjectDetailScreenState extends State<SubjectDetailScreen> {
 
       print('Posting message: $messageObject');
 
-      var url =
-          Uri.parse('http://192.168.243.173/tutoring_app/post_message.php');
+      var url = Uri.parse('http://10.5.50.138/tutoring_app/post_message.php');
       var response =
           await http.post(url, body: json.encode(messageObject), headers: {
         'Content-Type': 'application/json',
@@ -195,7 +194,7 @@ class _SubjectDetailScreenState extends State<SubjectDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.subject['name']),
-        backgroundColor: const Color.fromARGB(255, 28, 195, 198),
+        backgroundColor: const Color(0xFF1CC3C6),
         elevation: 0,
       ),
       body: isLoading
@@ -206,182 +205,190 @@ class _SubjectDetailScreenState extends State<SubjectDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Title and description of the subject
-                  Text(
-                    widget.subject['description'],
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 20),
-
-                  // แสดงเฉพาะเมื่อ userRole ไม่ใช่ tutor
-                  if (widget.userRole != 'Tutor')
-                    // Box for posting a new message
-                    Container(
-                      padding: const EdgeInsets.all(16.0),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10.0),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.3),
-                            spreadRadius: 2,
-                            blurRadius: 5,
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Post a new message:',
-                            style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold),
-                          ),
-                          SizedBox(height: 10),
-                          TextField(
-                            controller: _postController,
-                            decoration: InputDecoration(
-                              hintText: 'Enter your message',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8.0),
-                              ),
-                              filled: true,
-                              fillColor: Colors.grey[200],
-                            ),
-                            maxLines: 3,
-                          ),
-                          SizedBox(height: 10),
-                          TextField(
-                            controller: _locationController,
-                            decoration: InputDecoration(
-                              hintText: 'Enter location',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8.0),
-                              ),
-                              filled: true,
-                              fillColor: Colors.grey[200],
-                            ),
-                          ),
-                          SizedBox(height: 10),
-                          TextField(
-                            controller: _dateTimeController,
-                            decoration: InputDecoration(
-                              hintText: 'Enter date and time',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8.0),
-                              ),
-                              filled: true,
-                              fillColor: Colors.grey[200],
-                            ),
-                          ),
-                          SizedBox(height: 20),
-                          Center(
-                            child: ElevatedButton.icon(
-                              onPressed: _postMessage,
-                              icon: Icon(Icons.send),
-                              label: Text('Post Message'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    const Color.fromARGB(255, 28, 195, 198),
-                                foregroundColor: Colors.white,
-                                padding: EdgeInsets.symmetric(
-                                    vertical: 12.0, horizontal: 24.0),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8.0),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
+                  Container(
+                    padding: EdgeInsets.symmetric(vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFe0f7fa),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      widget.subject['description'],
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF006064),
                       ),
                     ),
+                  ),
                   SizedBox(height: 20),
 
-                  // Tutors list section
-                  Text(
-                    'Tutors for ${widget.subject['name']}:',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 10),
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: NeverScrollableScrollPhysics(),
-                    itemCount: tutors.length,
-                    itemBuilder: (context, index) {
-                      final tutor = tutors[index];
-                      final name = tutor['name'] ?? 'No Name';
-                      final category = tutor['category'] ?? 'No Category';
-                      final subject = tutor['subject'] ?? 'No Subject';
-                      final profileImageUrl = tutor['profile_images'] != null &&
-                              tutor['profile_images'].isNotEmpty
-                          ? 'http://192.168.243.173/tutoring_app/uploads/' +
-                              tutor['profile_images']
-                          : 'images/default_profile.jpg';
-                      final username = tutor['name'] ?? 'No Username';
+                  if (widget.userRole != 'Tutor') _buildPostMessageSection(),
 
-                      return GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => TutorProfileScreen(
-                                userName: username,
-                                userRole: 'Tutor',
-                                canEdit: false,
-                                onProfileUpdated: () {},
-                                currentUser: widget.userName,
-                                currentUserImage: widget.profileImageUrl,
-                                username: name,
-                                profileImageUrl: profileImageUrl,
-                                userId: widget.idUser,
-                                tutorId: tutor['id'].toString(),
-                                idUser: widget.idUser,
-                                recipientImage: '',
-                                currentUserRole: widget.currentUserRole,
-                              ),
-                            ),
-                          );
-                        },
-                        child: Card(
-                          margin: EdgeInsets.symmetric(vertical: 8.0),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10.0),
-                          ),
-                          elevation: 3,
-                          child: ListTile(
-                            leading: GestureDetector(
-                              onTap: () {
-                                _viewProfile(username);
-                              },
-                              child: CircleAvatar(
-                                backgroundImage:
-                                    profileImageUrl.contains('http')
-                                        ? NetworkImage(profileImageUrl)
-                                        : AssetImage(profileImageUrl)
-                                            as ImageProvider,
-                              ),
-                            ),
-                            title: Text(name,
-                                style: TextStyle(
-                                    color: Colors.black, fontSize: 18)),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Subjects: $subject',
-                                    style: TextStyle(
-                                        color: Colors.black, fontSize: 16)),
-                                Text('Category: $category',
-                                    style: TextStyle(
-                                        color: Colors.black, fontSize: 16)),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+                  SizedBox(height: 20),
+
+                  _buildTutorsSection(),
                 ],
               ),
             ),
+    );
+  }
+
+  Widget _buildPostMessageSection() {
+    return Container(
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10.0),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.3),
+            spreadRadius: 2,
+            blurRadius: 5,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Post a new message:',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: 10),
+          _buildTextField(
+              controller: _postController, hintText: 'Enter your message'),
+          SizedBox(height: 10),
+          _buildTextField(
+              controller: _locationController, hintText: 'Enter location'),
+          SizedBox(height: 10),
+          _buildTextField(
+              controller: _dateTimeController, hintText: 'Enter date and time'),
+          SizedBox(height: 20),
+          Center(
+            child: ElevatedButton.icon(
+              onPressed: _postMessage,
+              icon: Icon(Icons.send),
+              label: Text('Post Message'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1CC3C6),
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 24.0),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTextField(
+      {required TextEditingController controller, required String hintText}) {
+    return TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        hintText: hintText,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+        filled: true,
+        fillColor: Colors.grey[200],
+      ),
+      maxLines: hintText == 'Enter your message' ? 3 : 1,
+    );
+  }
+
+  Widget _buildTutorsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Tutors for ${widget.subject['name']}:',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF006064),
+          ),
+        ),
+        SizedBox(height: 10),
+        ListView.builder(
+          shrinkWrap: true,
+          physics: NeverScrollableScrollPhysics(),
+          itemCount: tutors.length,
+          itemBuilder: (context, index) {
+            final tutor = tutors[index];
+            final name = tutor['name'] ?? 'No Name';
+            final category = tutor['category'] ?? 'No Category';
+            final subject = tutor['subject'] ?? 'No Subject';
+            final profileImageUrl = tutor['profile_images'] != null &&
+                    tutor['profile_images'].isNotEmpty
+                ? 'http://10.5.50.138/tutoring_app/uploads/' +
+                    tutor['profile_images']
+                : 'images/default_profile.jpg';
+            final username = tutor['name'] ?? 'No Username';
+
+            return GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => TutorProfileScreen(
+                      userName: username,
+                      userRole: 'Tutor',
+                      canEdit: false,
+                      onProfileUpdated: () {},
+                      currentUser: widget.userName,
+                      currentUserImage: widget.profileImageUrl,
+                      username: name,
+                      profileImageUrl: profileImageUrl,
+                      userId: widget.idUser,
+                      tutorId: tutor['id'].toString(),
+                      idUser: widget.idUser,
+                      recipientImage: '',
+                      currentUserRole: widget.currentUserRole,
+                    ),
+                  ),
+                );
+              },
+              child: Card(
+                margin: EdgeInsets.symmetric(vertical: 8.0),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10.0),
+                ),
+                elevation: 3,
+                child: ListTile(
+                  leading: GestureDetector(
+                    onTap: () {
+                      _viewProfile(username);
+                    },
+                    child: CircleAvatar(
+                      backgroundImage: profileImageUrl.contains('http')
+                          ? NetworkImage(profileImageUrl)
+                          : AssetImage(profileImageUrl) as ImageProvider,
+                    ),
+                  ),
+                  title: Text(name,
+                      style: TextStyle(color: Colors.black, fontSize: 18)),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Subjects: $subject',
+                          style: TextStyle(color: Colors.black, fontSize: 16)),
+                      Text('Category: $category',
+                          style: TextStyle(color: Colors.black, fontSize: 16)),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 }

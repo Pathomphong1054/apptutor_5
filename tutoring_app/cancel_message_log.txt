@@ -14,3 +14,35 @@ Array
 
     [session_id] => 187
 )
+Array
+(
+    [sender] => ปฐมพงษ์ บุญเกื้อ
+    [recipient] => go
+    [message] => การนัดหมายวันที่ 23/9/2024 ถูกยกเลิกแล้ว.
+
+    [session_id] => 200
+)
+Array
+(
+    [sender] => ปฐมพงษ์ บุญเกื้อ
+    [recipient] => go
+    [message] => การนัดหมายวันที่ 23/9/2024 ถูกยกเลิกแล้ว.
+
+    [session_id] => 200
+)
+Array
+(
+    [sender] => Pathomphong Bunkue
+    [recipient] => Pathomphong Bunkue
+    [message] => การนัดหมายวันที่ 24/10/2024 ถูกยกเลิกแล้ว.
+
+    [session_id] => 204
+)
+Array
+(
+    [sender] => beam
+    [recipient] => ice
+    [message] => การนัดหมายวันที่ 30/10/2024 ถูกยกเลิกแล้ว.
+
+    [session_id] => 214
+)

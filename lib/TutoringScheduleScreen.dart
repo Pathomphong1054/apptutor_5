@@ -70,7 +70,7 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
   Future<void> _fetchTutorSchedule() async {
     final response = await http.get(
       Uri.parse(
-          'http://192.168.243.173/tutoring_app/get_tutor_schedule.php?tutor=${widget.tutorName}'),
+          'http://10.5.50.138/tutoring_app/get_tutor_schedule.php?tutor=${widget.tutorName}'),
     );
 
     if (response.statusCode == 200) {
@@ -103,7 +103,7 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
   Future<void> _fetchStudentSessions() async {
     final response = await http.get(
       Uri.parse(
-          'http://192.168.243.173/tutoring_app/get_student_sessions.php?tutor=${widget.tutorName}'),
+          'http://10.5.50.138/tutoring_app/get_student_sessions.php?tutor=${widget.tutorName}'),
     );
 
     if (response.statusCode == 200) {
@@ -125,7 +125,7 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
   Future<void> _fetchScheduledTimesForDay(DateTime selectedDay) async {
     final response = await http.get(
       Uri.parse(
-          'http://192.168.243.173/tutoring_app/fetch_scheduled_times.php?date=$selectedDay&tutor=${widget.tutorName}'),
+          'http://10.5.50.138/tutoring_app/fetch_scheduled_times.php?date=$selectedDay&tutor=${widget.tutorName}'),
     );
 
     if (response.statusCode == 200) {
@@ -374,7 +374,7 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
             rates.firstWhere((rate) => rate['people'] == selectedRate)['price'];
 
         final response = await http.post(
-          Uri.parse('http://192.168.243.173/tutoring_app/schedule_session.php'),
+          Uri.parse('http://10.5.50.138/tutoring_app/schedule_session.php'),
           headers: {'Content-Type': 'application/json'},
           body: json.encode({
             'student': widget.currentUser,
@@ -471,7 +471,7 @@ class _TutoringScheduleScreenState extends State<TutoringScheduleScreen> {
     });
 
     final response = await http.post(
-      Uri.parse('http://192.168.243.173/tutoring_app/send_message.php'),
+      Uri.parse('http://10.5.50.138/tutoring_app/send_message.php'),
       headers: {'Content-Type': 'application/json'},
       body: payload,
     );

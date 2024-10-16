@@ -297,7 +297,7 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
 
     var request = http.MultipartRequest(
       'POST',
-      Uri.parse('http://192.168.243.173/tutoring_app/register_student.php'),
+      Uri.parse('http://10.5.50.138/tutoring_app/register_student.php'),
     );
 
     request.fields['name'] = name;
@@ -352,7 +352,7 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
               userName: userName,
               userRole: 'student',
               profileImageUrl:
-                  'http://192.168.243.173/tutoring_app/uploads/$profileImageUrl',
+                  'http://10.5.50.138/tutoring_app/uploads/$profileImageUrl',
               currentUserRole: 'student',
               idUser: '',
               tutorName: '',

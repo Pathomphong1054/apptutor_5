@@ -16,6 +16,7 @@ if (isset($data['userName'], $data['profileImageUrl'], $data['message'], $data['
     $dateTime = $data['dateTime'];
     $location = $data['location'];
     $subject = $data['subject'];
+    $created_at = $date('Y-m-d H:i:s'); // วันที่และเวลาปัจจุบัน
 
     // เตรียมคำสั่ง SQL
     $sql = "INSERT INTO port_messages (userName, profileImageUrl, message, dateTime, location, subject) 

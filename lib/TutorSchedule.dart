@@ -38,7 +38,7 @@ class _TutorScheduleState extends State<TutorSchedule> {
   Future<void> _fetchTutorSessions() async {
     final response = await http.get(
       Uri.parse(
-          'http://192.168.243.173/tutoring_app/fetch_tutor_sessions.php?tutor=${widget.userName}'),
+          'http://10.5.50.138/tutoring_app/fetch_tutor_sessions.php?tutor=${widget.userName}'),
     );
 
     if (response.statusCode == 200) {
@@ -80,7 +80,7 @@ class _TutorScheduleState extends State<TutorSchedule> {
 
   Future<void> _deleteSession(String sessionId) async {
     final response = await http.post(
-      Uri.parse('http://192.168.243.173/tutoring_app/delete_session.php'),
+      Uri.parse('http://10.5.50.138/tutoring_app/delete_session.php'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({'id': sessionId}),
     );

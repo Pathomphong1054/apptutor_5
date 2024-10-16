@@ -47,7 +47,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
 
     try {
       final url = Uri.parse(
-          'http://192.168.243.173/tutoring_app/get_student_profile.php?username=${widget.userName}');
+          'http://10.5.50.138/tutoring_app/get_student_profile.php?username=${widget.userName}');
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
@@ -107,7 +107,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
       try {
         var response = await http.post(
           Uri.parse(
-              'http://192.168.243.173/tutoring_app/update_student_profile.php'),
+              'http://10.5.50.138/tutoring_app/update_student_profile.php'),
           body: {
             'username': widget.userName,
             'name': _nameController.text,
@@ -149,8 +149,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
     try {
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse(
-            'http://192.168.243.173/tutoring_app/upload_profile_student.php'),
+        Uri.parse('http://10.5.50.138/tutoring_app/upload_profile_student.php'),
       );
 
       request.files.add(
@@ -325,7 +324,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                                           ? FileImage(_profileImage!)
                                           : (_profileImageUrl != null
                                               ? NetworkImage(
-                                                  'http://192.168.243.173/tutoring_app/uploads/$_profileImageUrl')
+                                                  'http://10.5.50.138/tutoring_app/uploads/$_profileImageUrl')
                                               : AssetImage(
                                                       'images/default_profile.jpg')
                                                   as ImageProvider),

@@ -39,7 +39,7 @@ class _StudentRequestsScreenState extends State<StudentRequestsScreen> {
     });
 
     var url = Uri.parse(
-        'http://192.168.243.173/tutoring_app/fetch_requests.php?recipient=${widget.userName}');
+        'http://10.5.50.138/tutoring_app/fetch_requests.php?recipient=${widget.userName}');
     try {
       var response = await http.get(url);
 
@@ -70,7 +70,7 @@ class _StudentRequestsScreenState extends State<StudentRequestsScreen> {
   Future<void> _respondToRequest(int requestId, bool isAccepted,
       String tutorName, String tutorProfileImage) async {
     var response = await http.post(
-      Uri.parse('http://192.168.243.173/tutoring_app/respond_request.php'),
+      Uri.parse('http://10.5.50.138/tutoring_app/respond_request.php'),
       body: json.encode({
         'request_id': requestId,
         'is_accepted': isAccepted ? 1 : 0,
@@ -112,7 +112,7 @@ class _StudentRequestsScreenState extends State<StudentRequestsScreen> {
 
   Future<void> _deleteRequestFromDatabase(int requestId) async {
     var response = await http.post(
-      Uri.parse('http://192.168.243.173/tutoring_app/delete_request.php'),
+      Uri.parse('http://10.5.50.138/tutoring_app/delete_request.php'),
       body: json.encode({
         'request_id': requestId,
       }),
@@ -126,8 +126,7 @@ class _StudentRequestsScreenState extends State<StudentRequestsScreen> {
 
   Future<void> _deletePostByUserName(String userName) async {
     var response = await http.post(
-      Uri.parse(
-          'http://192.168.243.173/tutoring_app/delete_post_by_username.php'),
+      Uri.parse('http://10.5.50.138/tutoring_app/delete_post_by_username.php'),
       body: json.encode({
         'user_name': userName,
       }),
@@ -239,7 +238,7 @@ class _StudentRequestsScreenState extends State<StudentRequestsScreen> {
                             backgroundImage: tutorProfileImage != null &&
                                     tutorProfileImage.isNotEmpty
                                 ? NetworkImage(
-                                    'http://192.168.243.173/tutoring_app/uploads/$tutorProfileImage')
+                                    'http://10.5.50.138/tutoring_app/uploads/$tutorProfileImage')
                                 : AssetImage('images/default_profile.jpg')
                                     as ImageProvider,
                           ),

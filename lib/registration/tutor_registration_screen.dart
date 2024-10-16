@@ -267,7 +267,7 @@ class _TutorRegistrationScreenState extends State<TutorRegistrationScreen> {
 
     var request = http.MultipartRequest(
       'POST',
-      Uri.parse('http://192.168.243.173/tutoring_app/register_tutor.php'),
+      Uri.parse('http://10.5.50.138/tutoring_app/register_tutor.php'),
     );
     request.fields['name'] = name;
     request.fields['email'] = email;
@@ -316,7 +316,7 @@ class _TutorRegistrationScreenState extends State<TutorRegistrationScreen> {
                 userName: userName,
                 userRole: 'Tutor',
                 profileImageUrl: responseData['profile_image'] != null
-                    ? 'http://192.168.243.173/tutoring_app/uploads/' +
+                    ? 'http://10.5.50.138/tutoring_app/uploads/' +
                         responseData['profile_image']
                     : 'images/default_profile.jpg',
                 currentUserRole: 'Tutor',

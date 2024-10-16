@@ -36,7 +36,7 @@ class _FavoriteTutorsScreenState extends State<FavoriteTutorsScreen> {
 
   Future<void> _loadFavoriteTutors() async {
     final url =
-        'http://192.168.243.173/tutoring_app/get_favorite_tutors.php?student_id=${widget.userId}';
+        'http://10.5.50.138/tutoring_app/get_favorite_tutors.php?student_id=${widget.userId}';
 
     try {
       final response = await http.get(Uri.parse(url));
@@ -108,7 +108,7 @@ class _FavoriteTutorsScreenState extends State<FavoriteTutorsScreen> {
                             final profileImageUrl = tutor['profile_images'] !=
                                         null &&
                                     tutor['profile_images'].isNotEmpty
-                                ? 'http://192.168.243.173/tutoring_app/uploads/' +
+                                ? 'http://10.5.50.138/tutoring_app/uploads/' +
                                     tutor['profile_images']
                                 : 'images/default_profile.jpg';
 

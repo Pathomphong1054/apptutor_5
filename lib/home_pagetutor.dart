@@ -61,6 +61,7 @@ class _HomePage2State extends State<HomePage2>
   String searchQuery = '';
   String tutorId = '';
   int _selectedIndex = 0; // Track the selected index
+  String? selectedSubject; // ตัวแปรสำหรับเก็บวิชาที่เลือก
   final TextEditingController _postController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
   final TextEditingController _dateTimeController = TextEditingController();
@@ -87,7 +88,7 @@ class _HomePage2State extends State<HomePage2>
 
   Future<void> _fetchTutors() async {
     _setLoadingState(true);
-    var url = Uri.parse('http://192.168.243.173/tutoring_app/fetch_tutors.php');
+    var url = Uri.parse('http://10.5.50.138/tutoring_app/fetch_tutors.php');
     try {
       var response = await http.get(url);
       if (response.statusCode == 200) {
@@ -140,7 +141,7 @@ class _HomePage2State extends State<HomePage2>
 
   Future<void> _fetchProfileImage() async {
     var url = Uri.parse(
-        'http://192.168.243.173/tutoring_app/get_user_profile.php?username=$_userName&role=${widget.userRole}');
+        'http://10.5.50.138/tutoring_app/get_user_profile.php?username=$_userName&role=${widget.userRole}');
     try {
       var response = await http.get(url);
       if (response.statusCode == 200) {
@@ -148,7 +149,7 @@ class _HomePage2State extends State<HomePage2>
         if (data['status'] == 'success') {
           setState(() {
             _profileImageUrl = data['profile_image'] != null
-                ? 'http://192.168.243.173/tutoring_app/uploads/${data['profile_image']}'
+                ? 'http://10.5.50.138/tutoring_app/uploads/${data['profile_image']}'
                 : 'images/default_profile.jpg';
             _userName = data['name'];
           });
@@ -167,8 +168,7 @@ class _HomePage2State extends State<HomePage2>
 
   Future<void> _fetchMessages() async {
     _setLoadingState(true);
-    var url =
-        Uri.parse('http://192.168.243.173/tutoring_app/fetch_messages.php');
+    var url = Uri.parse('http://10.5.50.138/tutoring_app/fetch_messages.php');
     try {
       var response = await http.get(url);
 
@@ -202,8 +202,7 @@ class _HomePage2State extends State<HomePage2>
         'subject': 'N/A',
       };
 
-      var url =
-          Uri.parse('http://192.168.243.173/tutoring_app/post_message.php');
+      var url = Uri.parse('http://10.5.50.138/tutoring_app/post_message.php');
       var response =
           await http.post(url, body: json.encode(messageObject), headers: {
         'Content-Type': 'application/json',
@@ -266,7 +265,7 @@ class _HomePage2State extends State<HomePage2>
 
   Future<void> _sendRequest(String recipient, String recipientImage) async {
     var response = await http.post(
-      Uri.parse('http://192.168.243.173/tutoring_app/send_request.php'),
+      Uri.parse('http://10.5.50.138/tutoring_app/send_request.php'),
       body: json.encode({
         'sender': widget.userName,
         'recipient': recipient,
@@ -776,7 +775,7 @@ class _HomePage2State extends State<HomePage2>
                       final subject = tutor['subject'] ?? 'No Subject';
                       final profileImageUrl = tutor['profile_images'] != null &&
                               tutor['profile_images'].isNotEmpty
-                          ? 'http://192.168.243.173/tutoring_app/uploads/' +
+                          ? 'http://10.5.50.138/tutoring_app/uploads/' +
                               tutor['profile_images']
                           : 'images/default_profile.jpg';
 
@@ -829,16 +828,27 @@ class _HomePage2State extends State<HomePage2>
                                     style: TextStyle(
                                         color: Colors.black, fontSize: 16)),
                                 Row(
-                                  children: List.generate(5, (index) {
-                                    return Icon(
-                                      index < averageRating
-                                          ? Icons.star
-                                          : Icons.star_border,
-                                      color: index < averageRating
-                                          ? Colors.yellow
-                                          : Colors.grey,
-                                    );
-                                  }),
+                                  children: [
+                                    Row(
+                                      children: List.generate(5, (index) {
+                                        return Icon(
+                                          index < averageRating
+                                              ? Icons.star
+                                              : Icons.star_border,
+                                          color: index < averageRating
+                                              ? Colors.yellow
+                                              : Colors.grey,
+                                        );
+                                      }),
+                                    ),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      averageRating.toStringAsFixed(
+                                          1), // แสดงค่าเฉลี่ยรีวิว
+                                      style: TextStyle(
+                                          color: Colors.black, fontSize: 16),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -851,6 +861,28 @@ class _HomePage2State extends State<HomePage2>
     );
   }
 
+  // ฟังก์ชันสำหรับดึงรายชื่อวิชาที่มีอยู่ในโพสต์ทั้งหมด
+  List<String> _getAvailableSubjects() {
+    return messages
+        .map<String>((message) {
+          return message['subject'] ?? '';
+        })
+        .toSet()
+        .toList(); // เอาวิชาที่ซ้ำออกด้วย .toSet()
+  }
+
+  // ฟังก์ชันสำหรับกรองโพสต์ตามวิชาที่เลือก
+  List _getFilteredMessages() {
+    if (selectedSubject == null || selectedSubject == 'All') {
+      return messages; // ถ้าไม่ได้เลือกวิชา แสดงทุกโพสต์
+    }
+    // กรองโพสต์ตามวิชาที่เลือก
+    return messages.where((message) {
+      return message['subject'] == selectedSubject;
+    }).toList();
+  }
+
+  // เพิ่ม Dropdown สำหรับเลือกวิชา และการแสดงผลโพสต์ที่กรองแล้ว
   Widget _buildTutorBody() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -876,18 +908,45 @@ class _HomePage2State extends State<HomePage2>
           ),
         ),
         SizedBox(height: 20),
+
+        // Dropdown สำหรับเลือกวิชา
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: DropdownButton<String>(
+            hint: Text('Select a subject'), // ข้อความเมื่อยังไม่ได้เลือก
+            value: selectedSubject, // ค่าวิชาที่เลือก
+            items: [
+              'All',
+              ..._getAvailableSubjects()
+            ] // เพิ่ม "All" เพื่อเลือกแสดงทั้งหมด
+                .map<DropdownMenuItem<String>>((String value) {
+              return DropdownMenuItem<String>(
+                value: value,
+                child: Text(value),
+              );
+            }).toList(),
+            onChanged: (newValue) {
+              setState(() {
+                selectedSubject = newValue; // อัปเดตวิชาที่เลือก
+              });
+            },
+          ),
+        ),
+        SizedBox(height: 20),
+
         isLoading
             ? Center(child: CircularProgressIndicator())
             : ListView.builder(
                 shrinkWrap: true,
                 physics: NeverScrollableScrollPhysics(),
-                itemCount: messages.length,
+                itemCount:
+                    _getFilteredMessages().length, // ใช้ฟังก์ชันกรองข้อความ
                 itemBuilder: (context, index) {
-                  final message = messages[index];
+                  final message = _getFilteredMessages()[index];
                   final userName = message['userName'] ?? '';
                   final userImageUrl = message['profileImageUrl'] != null &&
                           message['profileImageUrl'].isNotEmpty
-                      ? 'http://192.168.243.173/tutoring_app/uploads/' +
+                      ? 'http://10.5.50.138/tutoring_app/uploads/' +
                           message['profileImageUrl']
                       : 'images/default_profile.jpg';
                   final messageText = message['message'] ?? '';
@@ -895,6 +954,7 @@ class _HomePage2State extends State<HomePage2>
                   final subject = message['subject'] ?? '';
                   final dateTime = message['dateTime'] ?? '';
                   final sessionId = message['session_id'] ?? '';
+                  final created_at = message['created_at'] ?? '';
 
                   return GestureDetector(
                     onTap: () {
@@ -908,6 +968,7 @@ class _HomePage2State extends State<HomePage2>
                       subject,
                       dateTime,
                       sessionId,
+                      created_at, // Pass created_at
                     ),
                   );
                 },
@@ -924,9 +985,12 @@ class _HomePage2State extends State<HomePage2>
     String subject,
     String dateTime,
     String sessionId,
+    String created_at, // Add created_at as a parameter
   ) {
-    // แปลงฟอร์แมตวันเวลาให้ดูสวยงาม
+    // Format both dateTime and created_at
     String formattedDateTime = _formatDateTime(dateTime);
+    String formattedCreatedAt =
+        _formatDateTime(created_at); // Format created_at
 
     return Card(
       margin: EdgeInsets.symmetric(vertical: 10, horizontal: 16),
@@ -999,13 +1063,27 @@ class _HomePage2State extends State<HomePage2>
             SizedBox(height: 10),
             Align(
               alignment: Alignment.bottomRight,
-              child: Text(
-                formattedDateTime, // แสดงวันที่ที่ถูกฟอร์แมต
-                style: TextStyle(
-                  fontSize: 14, // ขยายฟอนต์ให้ดูดีขึ้น
-                  color: Colors.blueGrey, // ใช้สีที่อ่านง่ายและสวยงาม
-                  fontStyle: FontStyle.italic,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    formattedDateTime, // Show formatted dateTime
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.blueGrey,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                  SizedBox(height: 5),
+                  Text(
+                    formattedCreatedAt, // Show formatted created_at
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.blueGrey,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
               ),
             ),
             SizedBox(height: 15),

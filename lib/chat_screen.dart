@@ -65,7 +65,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _fetchMessages() async {
     try {
       final response = await http.get(Uri.parse(
-          'http://192.168.243.173/tutoring_app/fetch_chat.php?sender=${widget.currentUser}&recipient=${widget.recipient}&session_id=${widget.sessionId}'));
+          'http://10.5.50.138/tutoring_app/fetch_chat.php?sender=${widget.currentUser}&recipient=${widget.recipient}&session_id=${widget.sessionId}'));
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
@@ -102,7 +102,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> createNotification(
       String sender, String recipient, String message, String type) async {
     final response = await http.post(
-      Uri.parse('http://192.168.243.173/tutoring_app/create_notification.php'),
+      Uri.parse('http://10.5.50.138/tutoring_app/create_notification.php'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({
         'sender': sender,
@@ -128,7 +128,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (message.isNotEmpty) {
       try {
         final response = await http.post(
-          Uri.parse('http://192.168.243.173/tutoring_app/send_message.php'),
+          Uri.parse('http://10.5.50.138/tutoring_app/send_message.php'),
           headers: {'Content-Type': 'application/json'},
           body: json.encode({
             'sender': widget.currentUser,
@@ -181,7 +181,7 @@ class _ChatScreenState extends State<ChatScreen> {
         'Location: Lat: ${position.latitude}, Lng: ${position.longitude}';
     try {
       final response = await http.post(
-        Uri.parse('http://192.168.243.173/tutoring_app/send_message.php'),
+        Uri.parse('http://10.5.50.138/tutoring_app/send_message.php'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'sender': widget.currentUser,
@@ -230,7 +230,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _sendImage(File image) async {
     var request = http.MultipartRequest(
       'POST',
-      Uri.parse('http://192.168.243.173/tutoring_app/upload_image_chat.php'),
+      Uri.parse('http://10.5.50.138/tutoring_app/upload_image_chat.php'),
     );
     request.fields['sender'] = widget.currentUser;
     request.fields['recipient'] = widget.recipient;
@@ -311,7 +311,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _sendResponse(String responseStatus, int sessionId) async {
     try {
       final response = await http.post(
-        Uri.parse('http://192.168.243.173/tutoring_app/update_response.php'),
+        Uri.parse('http://10.5.50.138/tutoring_app/update_response.php'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'session_id': sessionId,
@@ -370,7 +370,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
     // เรียก API เพื่อส่งข้อความ
     final response = await http.post(
-      Uri.parse('http://192.168.243.173/tutoring_app/send_message.php'),
+      Uri.parse('http://10.5.50.138/tutoring_app/send_message.php'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({
         'sender': widget.currentUser, // ติวเตอร์ที่ส่งข้อความ

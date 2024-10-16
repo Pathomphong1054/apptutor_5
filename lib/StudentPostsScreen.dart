@@ -18,7 +18,7 @@ class StudentPostsScreen extends StatefulWidget {
 class _StudentPostsScreenState extends State<StudentPostsScreen> {
   Future<List<dynamic>> _fetchPosts() async {
     final response = await http.get(Uri.parse(
-        'http://192.168.243.173/tutoring_app/get_student_posts.php?username=${widget.userName}'));
+        'http://10.5.50.138/tutoring_app/get_student_posts.php?username=${widget.userName}'));
 
     if (response.statusCode == 200) {
       final responseData = json.decode(response.body);
@@ -34,7 +34,7 @@ class _StudentPostsScreenState extends State<StudentPostsScreen> {
 
   Future<void> _deletePost(String postId) async {
     final response = await http.post(
-      Uri.parse('http://192.168.243.173/tutoring_app/delete_post_student.php'),
+      Uri.parse('http://10.5.50.138/tutoring_app/delete_post_student.php'),
       body: {'postId': postId},
     );
     if (response.statusCode == 200) {

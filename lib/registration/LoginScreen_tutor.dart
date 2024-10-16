@@ -25,7 +25,7 @@ class _LoginScreenTutorState extends State<LoginScreenTutor> {
     });
 
     final response = await http.post(
-      Uri.parse('http://192.168.243.173/tutoring_app/login.php'),
+      Uri.parse('http://10.5.50.138/tutoring_app/login.php'),
       body: {
         'email': email,
         'password': password,
@@ -43,7 +43,7 @@ class _LoginScreenTutorState extends State<LoginScreenTutor> {
         String userName = responseData['name'];
         String userRole = responseData['role'];
         String profileImageUrl = responseData['profile_image'] != null
-            ? 'http://192.168.243.173/tutoring_app/uploads/' +
+            ? 'http://10.5.50.138/tutoring_app/uploads/' +
                 responseData['profile_image']
             : 'images/default_profile.jpg';
 
