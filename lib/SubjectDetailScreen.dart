@@ -23,6 +23,7 @@ class SubjectDetailScreen extends StatefulWidget {
     required this.currentUserRole,
     required String userId,
     required String tutorId,
+    required this.currentUserRole,
   }) : super(key: key);
 
   @override
@@ -85,7 +86,7 @@ class _SubjectDetailScreenState extends State<SubjectDetailScreen> {
         'message': message,
         'dateTime': dateTime,
         'location': location,
-        'userName': widget.userName,
+        'student_id': widget.idUser, // ต้องเป็นค่าตัวเลข (ID) ของผู้ใช้
         'profileImageUrl': widget.profileImageUrl,
         'subject': widget.subject['name'],
       };
@@ -205,6 +206,7 @@ class _SubjectDetailScreenState extends State<SubjectDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Title and description of the subject
+<<<<<<< HEAD
                   Container(
                     padding: EdgeInsets.symmetric(vertical: 10),
                     decoration: BoxDecoration(
@@ -217,16 +219,190 @@ class _SubjectDetailScreenState extends State<SubjectDetailScreen> {
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF006064),
-                      ),
-                    ),
+=======
+                  Text(
+                    widget.subject['description'],
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   SizedBox(height: 20),
+
+                  // แสดงเฉพาะเมื่อ userRole ไม่ใช่ tutor
+                  if (widget.userRole != 'Tutor')
+                    // Box for posting a new message
+                    Container(
+                      padding: const EdgeInsets.all(16.0),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10.0),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.3),
+                            spreadRadius: 2,
+                            blurRadius: 5,
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Post a new message:',
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                          SizedBox(height: 10),
+                          TextField(
+                            controller: _postController,
+                            decoration: InputDecoration(
+                              hintText: 'Enter your message',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey[200],
+                            ),
+                            maxLines: 3,
+                          ),
+                          SizedBox(height: 10),
+                          TextField(
+                            controller: _locationController,
+                            decoration: InputDecoration(
+                              hintText: 'Enter location',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey[200],
+                            ),
+                          ),
+                          SizedBox(height: 10),
+                          TextField(
+                            controller: _dateTimeController,
+                            decoration: InputDecoration(
+                              hintText: 'Enter date and time',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey[200],
+                            ),
+                          ),
+                          SizedBox(height: 20),
+                          Center(
+                            child: ElevatedButton.icon(
+                              onPressed: _postMessage,
+                              icon: Icon(Icons.send),
+                              label: Text('Post Message'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    const Color.fromARGB(255, 28, 195, 198),
+                                foregroundColor: Colors.white,
+                                padding: EdgeInsets.symmetric(
+                                    vertical: 12.0, horizontal: 24.0),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8.0),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+>>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
+                      ),
+                    ),
+                  SizedBox(height: 20),
+<<<<<<< HEAD
 
                   if (widget.userRole != 'Tutor') _buildPostMessageSection(),
 
                   SizedBox(height: 20),
 
                   _buildTutorsSection(),
+=======
+
+                  // Tutors list section
+                  Text(
+                    'Tutors for ${widget.subject['name']}:',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 10),
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: NeverScrollableScrollPhysics(),
+                    itemCount: tutors.length,
+                    itemBuilder: (context, index) {
+                      final tutor = tutors[index];
+                      final name = tutor['name'] ?? 'No Name';
+                      final category = tutor['category'] ?? 'No Category';
+                      final subject = tutor['subject'] ?? 'No Subject';
+                      final profileImageUrl = tutor['profile_images'] != null &&
+                              tutor['profile_images'].isNotEmpty
+                          ? 'http://10.5.50.82/tutoring_app/uploads/' +
+                              tutor['profile_images']
+                          : 'images/default_profile.jpg';
+                      final username = tutor['name'] ?? 'No Username';
+
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => TutorProfileScreen(
+                                userName: username,
+                                userRole: 'Tutor',
+                                canEdit: false,
+                                onProfileUpdated: () {},
+                                currentUser: widget.userName,
+                                currentUserImage: widget.profileImageUrl,
+                                username: name,
+                                profileImageUrl: profileImageUrl,
+                                userId: widget.idUser,
+                                tutorId: tutor['id'].toString(),
+                                idUser: widget.idUser,
+                                recipientImage: '',
+                                currentUserRole: widget.currentUserRole,
+                              ),
+                            ),
+                          );
+                        },
+                        child: Card(
+                          margin: EdgeInsets.symmetric(vertical: 8.0),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10.0),
+                          ),
+                          elevation: 3,
+                          child: ListTile(
+                            leading: GestureDetector(
+                              onTap: () {
+                                _viewProfile(username);
+                              },
+                              child: CircleAvatar(
+                                backgroundImage:
+                                    profileImageUrl.contains('http')
+                                        ? NetworkImage(profileImageUrl)
+                                        : AssetImage(profileImageUrl)
+                                            as ImageProvider,
+                              ),
+                            ),
+                            title: Text(name,
+                                style: TextStyle(
+                                    color: Colors.black, fontSize: 18)),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Subjects: $subject',
+                                    style: TextStyle(
+                                        color: Colors.black, fontSize: 16)),
+                                Text('Category: $category',
+                                    style: TextStyle(
+                                        color: Colors.black, fontSize: 16)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+>>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
                 ],
               ),
             ),

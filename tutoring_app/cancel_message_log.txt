@@ -17,14 +17,22 @@ Array
 Array
 (
     [sender] => ปฐมพงษ์ บุญเกื้อ
+<<<<<<< HEAD
     [recipient] => go
     [message] => การนัดหมายวันที่ 23/9/2024 ถูกยกเลิกแล้ว.
 
     [session_id] => 200
+=======
+    [recipient] => Pathomphong Bunkue
+    [message] => การนัดหมายวันที่ 26/10/2024 ถูกยกเลิกแล้ว.
+
+    [session_id] => 196
+>>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
 )
 Array
 (
     [sender] => ปฐมพงษ์ บุญเกื้อ
+<<<<<<< HEAD
     [recipient] => go
     [message] => การนัดหมายวันที่ 23/9/2024 ถูกยกเลิกแล้ว.
 
@@ -45,4 +53,34 @@ Array
     [message] => การนัดหมายวันที่ 30/10/2024 ถูกยกเลิกแล้ว.
 
     [session_id] => 214
+=======
+    [recipient] => Pathomphong Bunkue
+    [message] => การนัดหมายวันที่ 23/9/2024 ถูกยกเลิกแล้ว.
+
+    [session_id] => 195
+)
+Array
+(
+    [sender] => ปฐมพงษ์ บุญเกื้อ
+    [recipient] => Pathomphong Bunkue
+    [message] => การนัดหมายวันที่ 25/10/2024 ถูกยกเลิกแล้ว.
+
+    [session_id] => 194
+)
+Array
+(
+    [sender] => ปฐมพงษ์ บุญเกื้อ
+    [recipient] => Pathomphong Bunkue
+    [message] => การนัดหมายวันที่ 16/10/2024 ถูกยกเลิกแล้ว.
+
+    [session_id] => 192
+)
+Array
+(
+    [sender] => ปฐมพงษ์ บุญเกื้อ
+    [recipient] => Pathomphong Bunkue
+    [message] => การนัดหมายวันที่ 15/10/2024 ถูกยกเลิกแล้ว.
+
+    [session_id] => 191
+>>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
 )

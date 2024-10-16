@@ -6,7 +6,7 @@ error_reporting(E_ERROR | E_PARSE);
 $servername = "localhost";
 $username = "root";
 $password = "";
-$dbname = "tutoring_db";
+$dbname = "final_tutoringapp";
 
 $conn = new mysqli($servername, $username, $password, $dbname);
 

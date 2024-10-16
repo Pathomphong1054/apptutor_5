@@ -242,7 +242,11 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
   Future<void> _getAddressFromCoordinates(
       double latitude, double longitude) async {
     final apiKey =
+<<<<<<< HEAD
         'AIzaSyAifMkvdmH00OHXVAw1RNV4nsL56vQWAzQ'; // ใส่ API Key ของคุณ
+=======
+        'AIzaSyAifMkvdmH00OHXVAw1RNV4nsL56vQWAzQ'; // ใส่ API key ของคุณ
+>>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
     final url = Uri.parse(
         'https://maps.googleapis.com/maps/api/geocode/json?latlng=$latitude,$longitude&key=$apiKey');
 
@@ -251,11 +255,30 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['status'] == 'OK') {
-          final address = data['results'][0]['formatted_address'];
+          final results = data['results'][0]['address_components'];
 
-          // อัปเดตฟิลด์ที่อยู่ด้วยที่อยู่ที่ได้จาก API
+          String? street, city, province, postalCode;
+
+          // ดึงค่าที่ต้องการจาก address_components
+          for (var component in results) {
+            if (component['types'].contains('route')) {
+              street = component['long_name'];
+            }
+            if (component['types'].contains('locality')) {
+              city = component['long_name'];
+            }
+            if (component['types'].contains('administrative_area_level_1')) {
+              province = component['long_name'];
+            }
+            if (component['types'].contains('postal_code')) {
+              postalCode = component['long_name'];
+            }
+          }
+
+          final fullAddress = '$street, $city, $province, $postalCode';
+
           setState(() {
-            _addressController.text = address;
+            _addressController.text = fullAddress; // แสดงผลที่อยู่ที่สมบูรณ์
           });
         }
       }
@@ -264,7 +287,13 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
     }
   }
 
+<<<<<<< HEAD
   bool isValidEmail(String email) {
+=======
+// ฟังก์ชันสำหรับตรวจสอบรูปแบบอีเมล
+  bool isValidEmail(String email) {
+    // รูปแบบสำหรับตรวจสอบอีเมล
+>>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
     final RegExp emailRegExp = RegExp(
       r'^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$',
     );
@@ -276,6 +305,14 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
     final String email = _emailController.text;
     final String password = _passwordController.text;
     final String confirmPassword = _confirmPasswordController.text;
+
+    // ตรวจสอบรูปแบบอีเมล
+    if (!isValidEmail(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please enter a valid email address')),
+      );
+      return;
+    }
 
     if (password != confirmPassword) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -323,12 +360,43 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
       print('Response Data: $responseData'); // เพิ่มการพิมพ์ข้อมูล response
 
       try {
-        var data = json.decode(responseData);
-        if (data['status'] == 'success') {
-          // ดำเนินการต่อ
+        // แก้ไขเพิ่ม: ตรวจสอบว่าข้อมูลที่ได้รับเป็น JSON หรือไม่
+        if (responseData.startsWith('{') || responseData.startsWith('[')) {
+          var data = json.decode(responseData);
+
+          if (data['status'] == 'success') {
+            String userName = name;
+            String profileImageUrl =
+                data['profile_image'] ?? 'default_profile.jpg';
+
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => HomePage2(
+                  userName: userName,
+                  userRole: 'student',
+                  profileImageUrl:
+                      'http://10.5.50.82/tutoring_app/uploads/$profileImageUrl',
+                  currentUserRole: 'student',
+                  idUser: '',
+                  tutorName: '',
+                  recipientImage: '',
+                  currentUserImage: '',
+                  tutorId: '',
+                  userImageUrl: '',
+                ),
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(data['message'])),
+            );
+          }
         } else {
+          // ถ้าข้อมูลไม่ใช่ JSON แสดงข้อความนี้
+          print('Invalid response format: $responseData');
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(data['message'])),
+            SnackBar(content: Text('Invalid server response')),
           );
         }
       } catch (e) {
@@ -337,6 +405,7 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
           SnackBar(content: Text('Error parsing server response')),
         );
       }
+<<<<<<< HEAD
 
       var data = json.decode(responseData);
 
@@ -368,6 +437,8 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
           SnackBar(content: Text(data['message'])),
         );
       }
+=======
+>>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
     }
   }
 }

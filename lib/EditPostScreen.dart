@@ -82,55 +82,75 @@ class _EditPostScreenState extends State<EditPostScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Edit Post', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Color.fromARGB(255, 28, 195, 198),
+        backgroundColor: const Color.fromARGB(255, 28, 195, 198),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            // ปรับช่อง Message ให้ใหญ่ขึ้นและรองรับหลายบรรทัด
-            _buildMessageField(
-              controller: _messageController,
-              label: 'Message',
-              icon: Icons.message,
+      body: Stack(
+        children: [
+          // Background Gradient
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  const Color.fromARGB(255, 28, 195, 198),
+                  const Color.fromARGB(255, 240, 240, 240),
+                ],
+              ),
             ),
-            SizedBox(height: 15),
-            _buildTextField(
-              controller: _locationController,
-              label: 'Location',
-              icon: Icons.location_on,
-            ),
-            SizedBox(height: 15),
-            _buildTextField(
-              controller: _subjectController,
-              label: 'Subject',
-              icon: Icons.book,
-            ),
-            SizedBox(height: 15),
-            _buildTextField(
-              controller: _dateTimeController,
-              label: 'Date and Time',
-              icon: Icons.calendar_today,
-            ),
-            SizedBox(height: 30),
-            _isLoading
-                ? CircularProgressIndicator()
-                : ElevatedButton(
-                    onPressed: _updatePost,
-                    style: ElevatedButton.styleFrom(
-                      padding:
-                          EdgeInsets.symmetric(vertical: 15, horizontal: 60),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
+          ),
+          SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                // ปรับช่อง Message ให้ใหญ่ขึ้นและรองรับหลายบรรทัด
+                _buildMessageField(
+                  controller: _messageController,
+                  label: 'Message',
+                  icon: Icons.message,
+                ),
+                SizedBox(height: 20),
+                _buildTextField(
+                  controller: _locationController,
+                  label: 'Location',
+                  icon: Icons.location_on,
+                ),
+                SizedBox(height: 20),
+                _buildTextField(
+                  controller: _subjectController,
+                  label: 'Subject',
+                  icon: Icons.book,
+                ),
+                SizedBox(height: 20),
+                _buildTextField(
+                  controller: _dateTimeController,
+                  label: 'Date and Time',
+                  icon: Icons.calendar_today,
+                ),
+                SizedBox(height: 30),
+                _isLoading
+                    ? CircularProgressIndicator()
+                    : ElevatedButton(
+                        onPressed: _updatePost,
+                        style: ElevatedButton.styleFrom(
+                          padding: EdgeInsets.symmetric(
+                              vertical: 15, horizontal: 60),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          backgroundColor:
+                              const Color.fromARGB(255, 28, 195, 198),
+                          textStyle: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
+                          shadowColor: Colors.grey.withOpacity(0.5),
+                          elevation: 8.0,
+                        ),
+                        child: Text('Update Post'),
                       ),
-                      backgroundColor: Color.fromARGB(255, 28, 195, 198),
-                      textStyle:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    child: Text('Update Post'),
-                  ),
-          ],
-        ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -141,20 +161,31 @@ class _EditPostScreenState extends State<EditPostScreen> {
     required String label,
     required IconData icon,
   }) {
-    return TextField(
-      controller: controller,
-      maxLines: 8, // ปรับจำนวนบรรทัดสูงสุด
-      minLines: 4, // ปรับจำนวนบรรทัดขั้นต่ำ
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon, color: Colors.blueAccent),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        filled: true,
-        fillColor: Colors.grey[100],
+    return Container(
+      decoration: BoxDecoration(
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.3),
+            blurRadius: 10,
+            offset: Offset(0, 5),
+          ),
+        ],
       ),
-      style: TextStyle(fontSize: 16),
+      child: TextField(
+        controller: controller,
+        maxLines: 8, // ปรับจำนวนบรรทัดสูงสุด
+        minLines: 4, // ปรับจำนวนบรรทัดขั้นต่ำ
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: Icon(icon, color: Colors.blueAccent),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          filled: true,
+          fillColor: Colors.white,
+        ),
+        style: TextStyle(fontSize: 16),
+      ),
     );
   }
 
@@ -164,18 +195,29 @@ class _EditPostScreenState extends State<EditPostScreen> {
     required String label,
     required IconData icon,
   }) {
-    return TextField(
-      controller: controller,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon, color: Colors.blueAccent),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        filled: true,
-        fillColor: Colors.grey[100],
+    return Container(
+      decoration: BoxDecoration(
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.3),
+            blurRadius: 10,
+            offset: Offset(0, 5),
+          ),
+        ],
       ),
-      style: TextStyle(fontSize: 16),
+      child: TextField(
+        controller: controller,
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: Icon(icon, color: Colors.blueAccent),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          filled: true,
+          fillColor: Colors.white,
+        ),
+        style: TextStyle(fontSize: 16),
+      ),
     );
   }
 }

@@ -14,15 +14,22 @@ class _LoginScreenStudentState extends State<LoginScreenStudent> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
-
   Future<void> login(BuildContext context) async {
-    final String email = _emailController.text;
-    final String password = _passwordController.text;
+    final String email = _emailController.text.trim(); // Trim เพื่อลบช่องว่าง
+    final String password = _passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Email and Password cannot be empty')),
+      );
+      return;
+    }
 
     setState(() {
       _isLoading = true;
     });
 
+<<<<<<< HEAD
     final response = await http.post(
       Uri.parse('http://10.5.50.138/tutoring_app/loginstudent.php'),
       body: {
@@ -30,13 +37,22 @@ class _LoginScreenStudentState extends State<LoginScreenStudent> {
         'password': password,
       },
     );
+=======
+    try {
+      final response = await http.post(
+        Uri.parse('http://10.5.50.82/tutoring_app/loginstudent.php'),
+        body: {
+          'email': email,
+          'password': password,
+        },
+      );
+>>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
 
-    setState(() {
-      _isLoading = false;
-    });
+      setState(() {
+        _isLoading = false;
+      });
 
-    if (response.statusCode == 200) {
-      try {
+      if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         if (responseData['status'] == 'success') {
           final String userName = responseData['name'];
@@ -47,12 +63,6 @@ class _LoginScreenStudentState extends State<LoginScreenStudent> {
               : 'images/default_profile.jpg';
           final String idUser = responseData['id'].toString();
 
-          // กำหนดค่าของ recipientImage และ currentUserImage
-          final String recipientImage =
-              profileImageUrl; // กำหนดค่า recipientImage ตามข้อมูลที่มี
-          final String currentUserImage =
-              profileImageUrl; // กำหนด currentUserImage ตาม profileImage ของผู้ใช้เอง
-
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
@@ -62,10 +72,11 @@ class _LoginScreenStudentState extends State<LoginScreenStudent> {
                 profileImageUrl: profileImageUrl,
                 currentUserRole: 'student',
                 idUser: idUser,
-                tutorName: '',
-                recipientImage: recipientImage, // ส่งค่า recipientImage
-                currentUserImage: currentUserImage, // ส่งค่า currentUserImage
-                tutorId: '', userImageUrl: '',
+                tutorName: '', // หากมีค่าให้เพิ่ม
+                recipientImage: profileImageUrl, // กำหนดให้เหมาะสม
+                currentUserImage: profileImageUrl, // ใช้รูปโปรไฟล์
+                tutorId: '', // สำหรับนักเรียน ไม่จำเป็นต้องมี tutorId
+                userImageUrl: profileImageUrl,
               ),
             ),
           );
@@ -74,14 +85,17 @@ class _LoginScreenStudentState extends State<LoginScreenStudent> {
             SnackBar(content: Text(responseData['message'])),
           );
         }
-      } catch (e) {
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error parsing JSON: $e')),
+          SnackBar(content: Text('Server error: ${response.statusCode}')),
         );
       }
-    } else {
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Server error')),
+        SnackBar(content: Text('Error: $e')),
       );
     }
   }

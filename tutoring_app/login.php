@@ -18,13 +18,17 @@ $result = $stmt->get_result();
 if ($result->num_rows == 1) {
     $row = $result->fetch_assoc();
     if (password_verify($password, $row['password'])) {
+        // ตรวจสอบ profile_image ว่ามีหรือไม่
+        $profileImage = isset($row['profile_images']) ? $row['profile_images'] : null;
+
+        // ส่งข้อมูลกลับไปใน JSON response
         echo json_encode([
             'status' => 'success', 
             'message' => 'Login successful', 
             'name' => $row['name'], 
             'role' => $row['role'],
-            'profile_image' => $row['profile_images'] ?? null, // Ensure you have this column
-            'id' => $row['id'], // Ensure you have this column
+            'profile_image' => $profileImage,  // ส่ง profile_image กลับไปด้วย
+            'id' => $row['id'],  // ส่งค่า id ของติวเตอร์ไปด้วย (tutor_id)
         ]);
     } else {
         echo json_encode(['status' => 'error', 'message' => 'Incorrect password']);

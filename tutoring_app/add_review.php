@@ -1,35 +1,31 @@
 <?php
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "tutoring_app";
+require 'db_connection.php';
+header('Content-Type: application/json');
 
-// Create connection
-$con = new mysqli($servername, $username, $password, $dbname);
-
-// Check connection
-if ($con->connect_error) {
-    die("Connection failed: " . $con->connect_error);
-}
-
+// รับข้อมูล JSON จาก client
 $data = json_decode(file_get_contents('php://input'), true);
-$tutor_name = $data['tutor_name'];
-$rating = $data['rating'];
-$comment = $data['comment'];
 
-$sql = "INSERT INTO reviews (tutor_name, rating, comment) VALUES ('$tutor_name', '$rating', '$comment')";
+// ตรวจสอบข้อมูลที่ได้รับ
+if (isset($data['tutor_id'], $data['student_id'], $data['rating'], $data['comment'])) {
+    $tutor_id = $data['tutor_id'];  // ตรวจสอบว่าได้ค่า tutor_id ถูกต้อง
+    $student_id = $data['student_id'];  // ตรวจสอบว่าได้ค่า student_id ถูกต้อง
+    $rating = $data['rating'];
+    $comment = $data['comment'];
 
-$response = array();
+    // เตรียมคำสั่ง SQL เพื่อบันทึกลงฐานข้อมูล
+    $stmt = $con->prepare("INSERT INTO reviews (tutor_id, student_id, rating, comment) VALUES (?, ?, ?, ?)");
+    $stmt->bind_param("iiis", $tutor_id, $student_id, $rating, $comment);
 
-if ($con->query($sql) === TRUE) {
-    $response['status'] = 'success';
-    $response['message'] = 'Review added successfully';
+    if ($stmt->execute()) {
+        echo json_encode(['status' => 'success', 'message' => 'Review added successfully']);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Failed to add review']);
+    }
+
+    $stmt->close();
 } else {
-    $response['status'] = 'error';
-    $response['message'] = 'Error: ' . $sql . '<br>' . $con->error;
+    echo json_encode(['status' => 'error', 'message' => 'Invalid input']);
 }
 
 $con->close();
-
-echo json_encode($response);
 ?>

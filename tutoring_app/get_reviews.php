@@ -1,38 +1,49 @@
 <?php
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "tutoring_app";
+require 'db_connection.php';
 
-// Create connection
-$con = new mysqli($servername, $username, $password, $dbname);
+// รับค่า tutor_id จาก request
+$tutor_id = isset($_GET['tutor_id']) ? $_GET['tutor_id'] : null;
 
-// Check connection
-if ($con->connect_error) {
-    die("Connection failed: " . $con->connect_error);
+// ตรวจสอบค่า tutor_id ว่ามีการส่งมาหรือไม่
+if (!$tutor_id) {
+    echo json_encode(['status' => 'error', 'message' => 'tutor_id missing']);
+    exit();
 }
 
-$tutor_name = $_GET['tutor_name'];
+// เตรียม SQL และการทำงานกับฐานข้อมูล
+$sql = "SELECT rating, comment FROM reviews WHERE tutor_id = ?";
+$stmt = $con->prepare($sql);
 
-$sql = "SELECT * FROM reviews WHERE tutor_name = '$tutor_name'";
-$result = $con->query($sql);
+// ตรวจสอบว่าค่า tutor_id เป็นจำนวนเต็มหรือไม่
+if (!$stmt) {
+    echo json_encode(['status' => 'error', 'message' => 'Failed to prepare statement']);
+    exit();
+}
+
+$stmt->bind_param("i", $tutor_id);
+$stmt->execute();
+$result = $stmt->get_result();
 
 $response = array();
 $response['status'] = 'success';
 $response['reviews'] = array();
 
+// ตรวจสอบว่ามีรีวิวหรือไม่
 if ($result->num_rows > 0) {
-    while($row = $result->fetch_assoc()) {
+    while ($row = $result->fetch_assoc()) {
         $review = array();
         $review['rating'] = $row['rating'];
         $review['comment'] = $row['comment'];
         $response['reviews'][] = $review;
     }
 } else {
-    $response['message'] = "No reviews found";
+    // ถ้าไม่มีรีวิวให้แสดงข้อความว่าไม่มีข้อมูล
+    $response['message'] = 'No reviews found';
 }
 
+$stmt->close();
 $con->close();
 
+// ส่งผลลัพธ์ในรูปแบบ JSON
 echo json_encode($response);
 ?>

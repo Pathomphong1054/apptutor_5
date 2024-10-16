@@ -171,6 +171,7 @@ class _HomePage2State extends State<HomePage2>
     var url = Uri.parse('http://10.5.50.138/tutoring_app/fetch_messages.php');
     try {
       var response = await http.get(url);
+      print(response.body); // เพิ่มการพิมพ์เพื่อตรวจสอบ response
 
       if (response.statusCode == 200) {
         var data = json.decode(response.body);
@@ -267,13 +268,15 @@ class _HomePage2State extends State<HomePage2>
     var response = await http.post(
       Uri.parse('http://10.5.50.138/tutoring_app/send_request.php'),
       body: json.encode({
-        'sender': widget.userName,
-        'recipient': recipient,
+        'sender_id': widget.idUser, // ใช้ idUser ที่เป็น ID จริงของผู้ใช้
+        'recipient_id': widget.tutorId, // ใช้ recipient ที่เป็น ID ของผู้รับ
         'message': 'คุณมีคำขอติวใหม่',
-        'role': widget.userRole,
       }),
       headers: {'Content-Type': 'application/json'},
     );
+
+    // พิมพ์ response.body เพื่อดูว่ามีข้อผิดพลาดอะไรเกิดขึ้น
+    print(response.body);
 
     if (response.statusCode == 200) {
       var responseData = json.decode(response.body);
@@ -633,6 +636,7 @@ class _HomePage2State extends State<HomePage2>
                   MaterialPageRoute(
                     builder: (context) => StudentPostsScreen(
                       userName: widget.userName,
+                      idUser: widget.idUser,
                     ),
                   ),
                 );
@@ -942,8 +946,13 @@ class _HomePage2State extends State<HomePage2>
                 itemCount:
                     _getFilteredMessages().length, // ใช้ฟังก์ชันกรองข้อความ
                 itemBuilder: (context, index) {
+<<<<<<< HEAD
                   final message = _getFilteredMessages()[index];
                   final userName = message['userName'] ?? '';
+=======
+                  final message = messages[index];
+                  final student_id = message['student_name'] ?? '';
+>>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
                   final userImageUrl = message['profileImageUrl'] != null &&
                           message['profileImageUrl'].isNotEmpty
                       ? 'http://10.5.50.138/tutoring_app/uploads/' +
@@ -958,10 +967,10 @@ class _HomePage2State extends State<HomePage2>
 
                   return GestureDetector(
                     onTap: () {
-                      _viewProfile(userName);
+                      _viewProfile(student_id);
                     },
                     child: _buildMessageCard(
-                      userName,
+                      student_id,
                       userImageUrl,
                       messageText,
                       location,

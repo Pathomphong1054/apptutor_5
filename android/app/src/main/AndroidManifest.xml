@@ -6,6 +6,11 @@
         <meta-data
         android:name="com.google.android.geo.API_KEY"
         android:value="AIzaSyAifMkvdmH00OHXVAw1RNV4nsL56vQWAzQ"/>
+<<<<<<< HEAD
+=======
+        <!-- android:value="AIzaSyAijDTG6loIcfDwQyU94VTK0ru1-55OylI"/> -->
+
+>>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
         <activity
             android:name=".MainActivity"
             android:exported="true"

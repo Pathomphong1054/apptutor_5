@@ -20,6 +20,7 @@ class ChatScreen extends StatefulWidget {
   final String currentUserRole;
   final String idUser;
   final String profileImageUrl;
+  final String tutorId;
 
   const ChatScreen({
     required this.currentUser,
@@ -30,8 +31,8 @@ class ChatScreen extends StatefulWidget {
     required this.currentUserRole,
     required this.idUser,
     required String userId,
-    required String tutorId,
     required this.profileImageUrl,
+    required this.tutorId,
   });
 
   @override
@@ -65,11 +66,16 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _fetchMessages() async {
     try {
       final response = await http.get(Uri.parse(
+<<<<<<< HEAD
           'http://10.5.50.138/tutoring_app/fetch_chat.php?sender=${widget.currentUser}&recipient=${widget.recipient}&session_id=${widget.sessionId}'));
+=======
+          'http://10.5.50.82/tutoring_app/fetch_chat.php?sender_id=${widget.currentUser}&recipient_id=${widget.recipient}&session_id=${widget.sessionId}'));
+>>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         if (responseData['status'] == 'success') {
+<<<<<<< HEAD
           if (mounted) {
             // ตรวจสอบก่อนใช้ setState
             setState(() {
@@ -81,6 +87,16 @@ class _ChatScreenState extends State<ChatScreen> {
             });
             _scrollToBottom(); // Scroll to the latest message
           }
+=======
+          setState(() {
+            _messages =
+                List<Map<String, dynamic>>.from(responseData['messages']);
+            _responseStatus = responseData[
+                'response_status']; // Fetch response_status if available
+            _isLoading = false;
+          });
+          _scrollToBottom(); // Scroll to the latest message
+>>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
         } else {
           throw Exception(
               'Failed to load messages: ${responseData['message']}');
@@ -127,12 +143,18 @@ class _ChatScreenState extends State<ChatScreen> {
     final message = _controller.text.trim();
     if (message.isNotEmpty) {
       try {
+        // Ensure you fetch the numeric sender and recipient IDs from the database
+        final senderId =
+            'ACTUAL_SENDER_ID'; // Replace with the actual sender's ID
+        final recipientId =
+            'ACTUAL_RECIPIENT_ID'; // Replace with the actual recipient's ID
+
         final response = await http.post(
           Uri.parse('http://10.5.50.138/tutoring_app/send_message.php'),
           headers: {'Content-Type': 'application/json'},
           body: json.encode({
-            'sender': widget.currentUser,
-            'recipient': widget.recipient,
+            'sender_id': senderId, // Use sender's numeric ID
+            'recipient_id': recipientId, // Use recipient's numeric ID
             'message': message,
             'session_id': widget.sessionId,
           }),
@@ -141,6 +163,7 @@ class _ChatScreenState extends State<ChatScreen> {
         if (response.statusCode == 200) {
           final responseData = json.decode(response.body);
           if (responseData['status'] == 'success') {
+<<<<<<< HEAD
             if (mounted) {
               // ตรวจสอบก่อนใช้ setState
               setState(() {
@@ -152,12 +175,19 @@ class _ChatScreenState extends State<ChatScreen> {
                 });
                 _allMessages[widget.sessionId] = _messages;
                 _controller.clear();
+=======
+            setState(() {
+              _messages.add({
+                'sender_id': senderId,
+                'recipient_id': recipientId,
+                'message': message,
+                'session_id': widget.sessionId,
+>>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
               });
               _scrollToBottom();
             }
 
-            await createNotification(
-                widget.currentUser, widget.recipient, message, 'chat');
+            await createNotification(senderId, recipientId, message, 'chat');
           } else {
             throw Exception(responseData['message']);
           }
@@ -184,8 +214,10 @@ class _ChatScreenState extends State<ChatScreen> {
         Uri.parse('http://10.5.50.138/tutoring_app/send_message.php'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
-          'sender': widget.currentUser,
-          'recipient': widget.recipient,
+          'sender_id':
+              widget.currentUser, // เปลี่ยนจาก 'sender' เป็น 'sender_id'
+          'recipient_id':
+              widget.recipient, // เปลี่ยนจาก 'recipient' เป็น 'recipient_id'
           'message': message,
           'latitude': position.latitude.toString(),
           'longitude': position.longitude.toString(),
@@ -196,6 +228,7 @@ class _ChatScreenState extends State<ChatScreen> {
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         if (responseData['status'] == 'success') {
+<<<<<<< HEAD
           if (mounted) {
             // ตรวจสอบก่อนใช้ setState
             setState(() {
@@ -208,6 +241,16 @@ class _ChatScreenState extends State<ChatScreen> {
                 'session_id': widget.sessionId,
               });
               _allMessages[widget.sessionId] = _messages;
+=======
+          setState(() {
+            _messages.add({
+              'sender_id': widget.currentUser,
+              'recipient_id': widget.recipient,
+              'message': message,
+              'latitude': position.latitude.toString(),
+              'longitude': position.longitude.toString(),
+              'session_id': widget.sessionId,
+>>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
             });
             _scrollToBottom();
           }

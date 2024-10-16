@@ -42,7 +42,11 @@ $count = $result->num_rows;
 if ($count > 0) {
     echo json_encode(['status' => 'error', 'message' => 'Email already exists']);
 } else {
+<<<<<<< HEAD
     // เพิ่ม latitude และ longitude ลงในคำสั่ง SQL
+=======
+    // เปลี่ยน profile_images เป็น profile_image ให้ตรงกับฐานข้อมูล
+>>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
     $stmt = $con->prepare("INSERT INTO students(name, password, email, address, profile_images, role, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
     $stmt->bind_param("ssssssdd", $name, $encrypted_pwd, $email, $address, $profileImage, $role, $latitude, $longitude);
     if ($stmt->execute()) {

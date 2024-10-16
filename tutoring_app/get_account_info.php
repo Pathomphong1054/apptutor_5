@@ -1,4 +1,4 @@
-<?php
+<!-- <?php
 require 'db_connection.php';
 header('Content-Type: application/json');
 
@@ -24,4 +24,4 @@ if ($result->num_rows > 0) {
 
 $stmt->close();
 $con->close();
-?>
+?> -->

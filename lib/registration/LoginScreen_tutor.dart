@@ -17,13 +17,21 @@ class _LoginScreenTutorState extends State<LoginScreenTutor> {
   bool _isLoading = false;
 
   Future<void> login(BuildContext context) async {
-    final String email = _emailController.text;
-    final String password = _passwordController.text;
+    final String email = _emailController.text.trim();
+    final String password = _passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Email and Password cannot be empty')),
+      );
+      return;
+    }
 
     setState(() {
       _isLoading = true;
     });
 
+<<<<<<< HEAD
     final response = await http.post(
       Uri.parse('http://10.5.50.138/tutoring_app/login.php'),
       body: {
@@ -31,11 +39,22 @@ class _LoginScreenTutorState extends State<LoginScreenTutor> {
         'password': password,
       },
     );
+=======
+    try {
+      final response = await http.post(
+        Uri.parse('http://10.5.50.82/tutoring_app/login.php'),
+        body: {
+          'email': email,
+          'password': password,
+        },
+      );
+>>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
 
-    setState(() {
-      _isLoading = false;
-    });
+      setState(() {
+        _isLoading = false;
+      });
 
+<<<<<<< HEAD
     if (response.statusCode == 200) {
       final responseData = json.decode(response.body);
       if (responseData['status'] == 'success') {
@@ -61,17 +80,52 @@ class _LoginScreenTutorState extends State<LoginScreenTutor> {
               currentUserImage: '',
               tutorId: '',
               userImageUrl: '',
+=======
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        if (responseData['status'] == 'success') {
+          final String tutorId = responseData['id'].toString(); // ใช้ tutor_id
+          final String userName = responseData['name'];
+          final String userRole = responseData['role'];
+          final String profileImageUrl = responseData['profile_image'] != null
+              ? 'http://10.5.50.82/tutoring_app/uploads/' +
+                  responseData['profile_image']
+              : 'images/default_profile.jpg';
+
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => HomePage2(
+                idUser: tutorId,
+                userName: userName,
+                userRole: userRole,
+                profileImageUrl: profileImageUrl,
+                currentUserRole: 'Tutor',
+                tutorName: '',
+                recipientImage: '',
+                currentUserImage: '',
+                tutorId: tutorId, // ส่งค่า tutorId ไปด้วย
+                userImageUrl: '',
+              ),
+>>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
             ),
-          ),
-        );
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(responseData['message'])),
+          );
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(responseData['message'])),
+          SnackBar(content: Text('Server error')),
         );
       }
-    } else {
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Server error')),
+        SnackBar(content: Text('Error: $e')),
       );
     }
   }

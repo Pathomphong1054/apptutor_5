@@ -5,10 +5,12 @@ import 'EditPostScreen.dart';
 
 class StudentPostsScreen extends StatefulWidget {
   final String userName;
+  final String idUser;
 
   const StudentPostsScreen({
     Key? key,
     required this.userName,
+    required this.idUser,
   }) : super(key: key);
 
   @override
@@ -16,16 +18,26 @@ class StudentPostsScreen extends StatefulWidget {
 }
 
 class _StudentPostsScreenState extends State<StudentPostsScreen> {
+  bool isLoading = false; // ตัวแปรสำหรับแสดง loading state
+
   Future<List<dynamic>> _fetchPosts() async {
     final response = await http.get(Uri.parse(
+<<<<<<< HEAD
         'http://10.5.50.138/tutoring_app/get_student_posts.php?username=${widget.userName}'));
+=======
+        'http://10.5.50.82/tutoring_app/get_student_posts.php?student_id=${widget.idUser}'));
+>>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
 
     if (response.statusCode == 200) {
-      final responseData = json.decode(response.body);
-      if (responseData['status'] == 'success') {
-        return responseData['posts'];
-      } else {
-        throw Exception('Failed to load posts: ${responseData['message']}');
+      try {
+        final responseData = json.decode(response.body);
+        if (responseData['status'] == 'success') {
+          return responseData['posts'];
+        } else {
+          throw Exception('Failed to load posts: ${responseData['message']}');
+        }
+      } catch (e) {
+        throw Exception('Failed to parse response: $e');
       }
     } else {
       throw Exception('Failed to load posts');
@@ -33,23 +45,42 @@ class _StudentPostsScreenState extends State<StudentPostsScreen> {
   }
 
   Future<void> _deletePost(String postId) async {
+    setState(() {
+      isLoading = true; // เริ่มแสดง loading
+    });
+
     final response = await http.post(
+<<<<<<< HEAD
       Uri.parse('http://10.5.50.138/tutoring_app/delete_post_student.php'),
+=======
+      Uri.parse('http://10.5.50.82/tutoring_app/delete_post_student.php'),
+>>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
       body: {'postId': postId},
     );
-    if (response.statusCode == 200) {
-      final responseData = json.decode(response.body);
 
-      if (responseData['status'] == 'success') {
-        setState(() {
-          _fetchPosts(); // รีเฟรชโพสต์
-        });
+    setState(() {
+      isLoading = false; // หยุดแสดง loading
+    });
+
+    if (response.statusCode == 200) {
+      try {
+        final responseData = json.decode(response.body);
+
+        if (responseData['status'] == 'success') {
+          setState(() {
+            _fetchPosts(); // รีเฟรชโพสต์
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Post deleted successfully')),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(responseData['message'])),
+          );
+        }
+      } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Post deleted successfully')),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(responseData['message'])),
+          SnackBar(content: Text('Error parsing response')),
         );
       }
     } else {
@@ -70,33 +101,42 @@ class _StudentPostsScreenState extends State<StudentPostsScreen> {
         backgroundColor: const Color.fromARGB(255, 28, 195, 198),
         centerTitle: true,
       ),
-      body: FutureBuilder<List<dynamic>>(
-        future: _fetchPosts(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text('No posts available'));
-          } else {
-            final posts = snapshot.data!;
-            return ListView.builder(
-              itemCount: posts.length,
-              itemBuilder: (context, index) {
-                final post = posts[index];
-                return _buildPostCard(
-                  post['id'].toString(),
-                  post['userName'] ?? 'Unknown User',
-                  post['message'] ?? '',
-                  post['location'] ?? 'Unknown Location',
-                  post['subject'] ?? 'Unknown Subject',
-                  post['dateTime'] ?? '',
+      body: Stack(
+        children: [
+          FutureBuilder<List<dynamic>>(
+            future: _fetchPosts(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}'));
+              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return Center(child: Text('No posts available'));
+              } else {
+                final posts = snapshot.data!;
+                return ListView.builder(
+                  itemCount: posts.length,
+                  itemBuilder: (context, index) {
+                    final post = posts[index];
+                    return _buildPostCard(
+                      post['id'].toString(),
+                      post['userName'] ?? 'Unknown User',
+                      post['message'] ?? '',
+                      post['location'] ?? 'Unknown Location',
+                      post['subject'] ?? 'Unknown Subject',
+                      post['dateTime'] ?? '',
+                    );
+                  },
                 );
-              },
-            );
-          }
-        },
+              }
+            },
+          ),
+          // แสดง loading indicator ขณะกำลังลบโพสต์
+          if (isLoading)
+            Center(
+              child: CircularProgressIndicator(),
+            ),
+        ],
       ),
     );
   }

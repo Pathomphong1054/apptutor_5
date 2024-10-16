@@ -35,7 +35,11 @@ class _BookedSessionsScreenState extends State<BookedSessionsScreen> {
   Future<void> _fetchBookedSessions() async {
     final response = await http.get(
       Uri.parse(
+<<<<<<< HEAD
           'http://10.5.50.138/tutoring_app/get_booked_sessions.php?tutor=${widget.tutorName}'),
+=======
+          'http://10.5.50.82/tutoring_app/get_booked_sessions.php?tutor=${widget.tutorName}'),
+>>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
     );
 
     print('Status Code: ${response.statusCode}');
@@ -69,7 +73,11 @@ class _BookedSessionsScreenState extends State<BookedSessionsScreen> {
 
   Future<void> _cancelSession(String sessionId, DateTime date) async {
     final response = await http.post(
+<<<<<<< HEAD
       Uri.parse('http://10.5.50.138/tutoring_app/cancel_session.php'),
+=======
+      Uri.parse('http://10.5.50.82/tutoring_app/cancel_session.php'),
+>>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
       headers: {'Content-Type': 'application/json'},
       body: json.encode({'session_id': sessionId}),
     );
@@ -119,7 +127,11 @@ class _BookedSessionsScreenState extends State<BookedSessionsScreen> {
     });
 
     final response = await http.post(
+<<<<<<< HEAD
       Uri.parse('http://10.5.50.138/tutoring_app/cancel_message.php'),
+=======
+      Uri.parse('http://10.5.50.82/tutoring_app/cancel_message.php'),
+>>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
       headers: {'Content-Type': 'application/json'},
       body: payload,
     );

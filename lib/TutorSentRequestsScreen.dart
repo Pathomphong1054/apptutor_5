@@ -46,9 +46,9 @@ class _TutorSentRequestsScreenState extends State<TutorSentRequestsScreen> {
   }
 
   Future<void> _fetchSentRequests() async {
-    if (widget.tutorName.isEmpty) {
+    if (widget.idUser.isEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _showErrorSnackBar('Sender parameter is missing');
+        _showErrorSnackBar('Sender ID parameter is missing');
       });
       return;
     }
@@ -58,13 +58,17 @@ class _TutorSentRequestsScreenState extends State<TutorSentRequestsScreen> {
     });
 
     var url = Uri.parse(
+<<<<<<< HEAD
         'http://10.5.50.138/tutoring_app/fetch_sent_requests.php?sender=${widget.tutorName}');
+=======
+        'http://10.5.50.82/tutoring_app/fetch_sent_requests.php?sender_id=${widget.idUser}');
+>>>>>>> 9fa5d0ac85e32d56780a25b46c14008d25c8661b
     print('Fetching data from: $url');
 
     try {
       var response = await http.get(url);
       print('API Response: ${response.body}');
-      print('Tutor Name (Sender): ${widget.tutorName}');
+      print('Sender ID (Sender): ${widget.idUser}');
 
       if (response.statusCode == 200) {
         var data = json.decode(response.body);
@@ -72,7 +76,7 @@ class _TutorSentRequestsScreenState extends State<TutorSentRequestsScreen> {
         if (data['status'] == 'success') {
           setState(() {
             sentRequests = data['requests'];
-            // จัดเรียงข้อมูลใหม่ โดยข้อมูลล่าสุดจะอยู่ด้านบน
+            // จัดเรียงคำขอตาม created_at
             sentRequests
                 .sort((a, b) => b['created_at'].compareTo(a['created_at']));
           });
@@ -158,7 +162,8 @@ class _TutorSentRequestsScreenState extends State<TutorSentRequestsScreen> {
                     itemCount: sentRequests.length,
                     itemBuilder: (context, index) {
                       final request = sentRequests[index];
-                      final studentName = request['recipient'];
+                      final student_name = request['student_name'] ?? 'Unknown';
+
                       final requestMessage = request['message'];
                       final isAccepted = request['is_accepted'] == 1;
                       final createdAt = request['created_at'];
@@ -191,7 +196,7 @@ class _TutorSentRequestsScreenState extends State<TutorSentRequestsScreen> {
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => StudentProfileScreen(
-                                    userName: studentName,
+                                    userName: student_name,
                                     onProfileUpdated: () {},
                                     userRole: 'student',
                                     profileImageUrl: '',
@@ -224,7 +229,8 @@ class _TutorSentRequestsScreenState extends State<TutorSentRequestsScreen> {
                                         ),
                                         SizedBox(width: 10),
                                         Text(
-                                          studentName,
+                                          student_name
+                                              .toString(), // ใช้ชื่อของนักเรียนที่ดึงมาอย่างถูกต้อง
                                           style: TextStyle(
                                             fontSize: 18,
                                             fontWeight: FontWeight.bold,
